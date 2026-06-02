@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Workout">
+<meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f5f2eb" media="(prefers-color-scheme: light)">
+<title>Workout Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #111111; --paper: #f5f2eb; --accent: #c8401a; --mid: #6b6560;
+  --rule: #d4cfc7; --card: #ffffff; --surface: #ece8df;
+  --font-head: 'Bebas Neue', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  --font-body: 'DM Sans', sans-serif;
+  --r: 10px; --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root { --ink: #f0ece3; --paper: #141210; --accent: #e05a2b; --mid: #9a9590;
+    --rule: #2e2b27; --card: #1e1b18; --surface: #252219; }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; background: var(--paper); color: var(--ink); font-family: var(--font-body); }
+#app { display: flex; flex-direction: column; height: 100%; max-width: 480px; margin: 0 auto; position: relative; }
+
+/* NAV BAR */
+#navbar { display: flex; background: var(--card); border-top: 0.5px solid var(--rule); padding-bottom: var(--safe-bottom); flex-shrink: 0; order: 2; }
+.nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px 10px; border: none; background: none; color: var(--mid); cursor: pointer; font-size: 10px; font-family: var(--font-body); gap: 3px; transition: color 0.15s; }
+.nav-btn.active { color: var(--accent); }
+.nav-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* SCREENS */
+#screens { flex: 1; overflow: hidden; order: 1; position: relative; }
+.screen { position: absolute; inset: 0; overflow-y: auto; display: none; padding: 0 0 1rem; -webkit-overflow-scrolling: touch; }
+.screen.active { display: block; }
+
+/* HEADER */
+.screen-header { padding: 16px 16px 12px; border-bottom: 0.5px solid var(--rule); display: flex; align-items: baseline; justify-content: space-between; }
+.screen-title { font-family: var(--font-head); font-size: 32px; letter-spacing: 0.5px; color: var(--ink); }
+.screen-title span { color: var(--accent); }
+.screen-sub { font-family: var(--font-mono); font-size: 10px; color: var(--mid); text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* CARDS */
+.card { background: var(--card); border: 0.5px solid var(--rule); border-radius: var(--r); margin: 12px 16px 0; padding: 14px; }
+.card-title { font-size: 13px; font-weight: 500; color: var(--ink); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+
+/* METRIC GRID */
+.metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 16px 0; }
+.metric { background: var(--surface); border-radius: var(--r); padding: 12px; }
+.metric-label { font-size: 10.5px; color: var(--mid); margin-bottom: 3px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; }
+.metric-value { font-family: var(--font-head); font-size: 28px; color: var(--ink); line-height: 1; }
+.metric-value.sm { font-size: 16px; margin-top: 4px; }
+
+/* DAY CHIPS */
+.day-chips { display: flex; gap: 6px; padding: 12px 16px 0; overflow-x: auto; scrollbar-width: none; }
+.day-chips::-webkit-scrollbar { display: none; }
+.day-chip { flex-shrink: 0; padding: 6px 14px; border-radius: 20px; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer; border: 0.5px solid var(--rule); background: var(--surface); color: var(--mid); transition: all 0.15s; }
+.day-chip.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+/* PROGRAM TABLE */
+.prog-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.prog-table th { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mid); padding: 6px 8px; text-align: left; border-bottom: 0.5px solid var(--rule); }
+.prog-table td { padding: 8px; border-bottom: 0.5px solid var(--rule); vertical-align: top; color: var(--ink); }
+.prog-table tr:last-child td { border-bottom: none; }
+.prog-table .sec-row td { background: var(--surface); font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--mid); padding: 4px 8px; }
+.ex-name { font-weight: 500; font-size: 12.5px; }
+.ex-note { font-size: 10.5px; color: var(--mid); margin-top: 1px; font-style: italic; }
+.load-b { color: var(--accent); font-family: var(--font-mono); font-size: 11px; }
+.load-f { color: #3b82f6; font-family: var(--font-mono); font-size: 11px; }
+.num-cell { text-align: center; font-family: var(--font-mono); font-size: 12px; }
+
+/* WARMUP */
+.warmup-strip { margin: 10px 16px 0; background: var(--surface); border-radius: var(--r); padding: 10px 12px; }
+.warmup-label { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mid); margin-bottom: 4px; }
+.warmup-text { font-size: 11.5px; color: var(--ink); line-height: 1.6; }
+
+/* FORMS */
+.form-group { margin-bottom: 12px; }
+.form-label { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mid); display: block; margin-bottom: 5px; }
+input, select, textarea { width: 100%; padding: 10px 12px; background: var(--surface); border: 0.5px solid var(--rule); border-radius: 8px; font-size: 14px; font-family: var(--font-body); color: var(--ink); outline: none; -webkit-appearance: none; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+textarea { min-height: 80px; resize: vertical; }
+.btn-row { display: flex; gap: 8px; margin-top: 4px; }
+.btn { padding: 11px 18px; border-radius: 8px; font-size: 13px; font-family: var(--font-body); font-weight: 500; cursor: pointer; border: none; transition: opacity 0.15s; }
+.btn:active { opacity: 0.7; }
+.btn-primary { background: var(--accent); color: white; flex: 1; }
+.btn-ghost { background: var(--surface); color: var(--ink); border: 0.5px solid var(--rule); }
+.confirm-msg { font-size: 12px; color: #3a9a3a; margin-top: 8px; font-family: var(--font-mono); }
+
+/* HISTORY */
+.history-item { padding: 12px 0; border-bottom: 0.5px solid var(--rule); }
+.history-item:last-child { border-bottom: none; }
+.history-week { font-family: var(--font-head); font-size: 20px; color: var(--ink); }
+.history-day { font-size: 12.5px; color: var(--mid); margin-top: 1px; }
+.history-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.history-date { font-family: var(--font-mono); font-size: 10px; color: var(--mid); }
+.status-pill { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-family: var(--font-mono); }
+.s-hit { background: #d1fad1; color: #1a6b1a; }
+.s-mixed { background: #fef3cd; color: #7a5a00; }
+.s-tough { background: #fde8e8; color: #8b2020; }
+@media (prefers-color-scheme: dark) {
+  .s-hit { background: #1a3d1a; color: #6dce6d; }
+  .s-mixed { background: #3d3010; color: #d4a830; }
+  .s-tough { background: #3d1010; color: #e07070; }
+}
+.history-notes { font-size: 11.5px; color: var(--mid); margin-top: 4px; font-style: italic; line-height: 1.5; }
+
+/* EQUIPMENT */
+.eq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.eq-item { background: var(--surface); border-radius: 8px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: flex-start; }
+.eq-type { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; color: var(--mid); margin-bottom: 2px; }
+.eq-name { font-size: 12px; color: var(--ink); }
+.eq-del { background: none; border: none; color: var(--mid); cursor: pointer; font-size: 18px; line-height: 1; padding: 0; margin-left: 4px; flex-shrink: 0; }
+
+/* RANDOMIZER */
+.rand-controls { display: flex; gap: 6px; padding: 10px 16px 0; flex-wrap: wrap; }
+.rand-controls .btn { padding: 9px 14px; font-size: 12px; }
+.legend { display: flex; gap: 10px; padding: 8px 16px 0; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--mid); font-family: var(--font-mono); }
+.badge { font-size: 9.5px; padding: 2px 6px; border-radius: 20px; font-weight: 500; }
+.b-new { background: #d1fad1; color: #1a6b1a; }
+.b-same { background: var(--surface); color: var(--mid); border: 0.5px solid var(--rule); }
+.b-locked { background: #fef3cd; color: #7a5a00; }
+@media (prefers-color-scheme: dark) {
+  .b-new { background: #1a3d1a; color: #6dce6d; }
+  .b-locked { background: #3d3010; color: #d4a830; }
+}
+.swap-btn { background: var(--surface); border: 0.5px solid var(--rule); border-radius: 6px; padding: 3px 7px; font-size: 10.5px; color: var(--mid); cursor: pointer; }
+.lock-btn { background: none; border: none; font-size: 15px; cursor: pointer; color: var(--mid); padding: 0 2px; }
+.lock-btn.on { color: var(--accent); }
+
+/* GENERATE */
+.gen-output { background: var(--surface); border-radius: var(--r); padding: 12px; font-size: 11.5px; font-family: var(--font-mono); line-height: 1.7; color: var(--ink); white-space: pre-wrap; max-height: 400px; overflow-y: auto; margin-top: 10px; }
+.gen-loading { color: var(--mid); font-style: italic; }
+
+/* SECTION DIVIDER */
+.section-divider { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--mid); padding: 14px 16px 4px; }
+
+/* SCROLLABLE TABLE WRAPPER */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="screens">
+
+    <!-- PROGRAM -->
+    <div class="screen active" id="s-program">
+      <div class="screen-header">
+        <div><div class="screen-title">WEEK <span id="wk-num">17</span></div><div class="screen-sub">Bands + Free Weights + Sled</div></div>
+        <div class="screen-sub" id="phase-label">Phase 4</div>
+      </div>
+      <div class="metric-grid">
+        <div class="metric"><div class="metric-label">Current week</div><div class="metric-value" id="m-week">17</div></div>
+        <div class="metric"><div class="metric-label">Sessions logged</div><div class="metric-value" id="m-sessions">0</div></div>
+        <div class="metric"><div class="metric-label">Program</div><div class="metric-value sm">U/L/U/O/L</div></div>
+        <div class="metric"><div class="metric-label">RPE target</div><div class="metric-value">8</div></div>
+      </div>
+      <div class="day-chips" id="prog-day-chips"></div>
+      <div class="warmup-strip"><div class="warmup-label">Warm-up</div><div class="warmup-text" id="prog-warmup"></div></div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div class="table-wrap"><table class="prog-table" id="prog-table"></table></div>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div class="screen" id="s-log">
+      <div class="screen-header"><div class="screen-title">LOG <span>SESSION</span></div></div>
+      <div class="card">
+        <div class="form-group"><label class="form-label">Week</label><input type="number" id="log-week" value="17" min="1"></div>
+        <div class="form-group"><label class="form-label">Day</label>
+          <select id="log-day">
+            <option>Day 1 — Upper A (Push)</option>
+            <option>Day 2 — Lower A (Hinge)</option>
+            <option>Day 3 — Upper B (Pull)</option>
+            <option>Day 4 — Olympic</option>
+            <option>Day 5 — Lower B (Quad)</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Performance notes</label>
+          <textarea id="log-notes" placeholder="e.g. DB bench 70lb ×8×5 all hit. OHP failed set 4 at 7 reps..."></textarea>
+        </div>
+        <div class="form-group"><label class="form-label">Overall session</label>
+          <select id="log-result">
+            <option value="hit">Hit everything</option>
+            <option value="mixed">Mixed — some misses</option>
+            <option value="tough">Tough week — held most loads</option>
+          </select>
+        </div>
+        <div class="btn-row"><button class="btn btn-primary" onclick="saveLog()">Save session</button></div>
+        <div class="confirm-msg" id="log-confirm"></div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="screen" id="s-history">
+      <div class="screen-header"><div class="screen-title">HISTORY</div></div>
+      <div class="card" id="history-list"></div>
+    </div>
+
+    <!-- RANDOMIZER -->
+    <div class="screen" id="s-random">
+      <div class="screen-header"><div class="screen-title">RANDOM<span>IZE</span></div><div class="screen-sub">Logical swaps only</div></div>
+      <div class="day-chips" id="rand-day-chips"></div>
+      <div class="rand-controls">
+        <button class="btn btn-primary" onclick="randDay()" style="flex:1">Randomize day</button>
+        <button class="btn btn-ghost" onclick="randAll()">All 5</button>
+        <button class="btn btn-ghost" onclick="resetRandDay()">Reset</button>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><span class="badge b-new">new</span> swapped</div>
+        <div class="legend-item"><span class="badge b-same">same</span> held</div>
+        <div class="legend-item"><span class="badge b-locked">locked</span> pinned</div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;margin-top:10px;">
+        <div class="table-wrap"><table class="prog-table" id="rand-table"></table></div>
+      </div>
+    </div>
+
+    <!-- GENERATE -->
+    <div class="screen" id="s-generate">
+      <div class="screen-header"><div class="screen-title">GENERATE <span>WEEK</span></div></div>
+      <div class="card">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="form-group" style="margin:0"><label class="form-label">Generating week</label><input type="number" id="gen-week" value="18" min="1"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Based on week</label><input type="number" id="gen-from" value="17" min="1"></div>
+        </div>
+        <div class="form-group" style="margin-top:10px"><label class="form-label">Performance last week</label>
+          <select id="gen-perf">
+            <option value="hit">Hit everything — progress across the board</option>
+            <option value="mixed">Mixed — some movements need holding</option>
+            <option value="tough">Tough week — hold most loads</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Notes (missed lifts, equipment changes)</label>
+          <textarea id="gen-notes" placeholder="e.g. Bench failed set 5. Added 25lb DBs..."></textarea>
+        </div>
+        <div class="btn-row"><button class="btn btn-primary" onclick="generateWeek()">Generate ↗</button><button class="btn btn-ghost" onclick="clearGen()">Clear</button></div>
+        <div id="gen-result"></div>
+      </div>
+    </div>
+
+    <!-- EQUIPMENT -->
+    <div class="screen" id="s-equipment">
+      <div class="screen-header"><div class="screen-title">EQUIP<span>MENT</span></div></div>
+      <div class="card">
+        <div class="eq-grid" id="eq-list"></div>
+      </div>
+      <div class="section-divider">Add equipment</div>
+      <div class="card">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div><label class="form-label">Name</label><input type="text" id="eq-name" placeholder="e.g. 80lb DB pair"></div>
+          <div><label class="form-label">Type</label>
+            <select id="eq-type"><option>Band</option><option>Dumbbell</option><option>Kettlebell</option><option>Barbell</option><option>Sled</option><option>Other</option></select>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="addEq()" style="width:100%">Add</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- NAVBAR -->
+  <nav id="navbar">
+    <button class="nav-btn active" onclick="showScreen('program',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Program
+    </button>
+    <button class="nav-btn" onclick="showScreen('log',this)">
+      <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Log
+    </button>
+    <button class="nav-btn" onclick="showScreen('history',this)">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      History
+    </button>
+    <button class="nav-btn" onclick="showScreen('random',this)">
+      <svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+      Random
+    </button>
+    <button class="nav-btn" onclick="showScreen('generate',this)">
+      <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.49"/></svg>
+      Generate
+    </button>
+    <button class="nav-btn" onclick="showScreen('equipment',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      Gear
+    </button>
+  </nav>
+</div>
+
+<script>
+const W17 = [
+  { label:'Upper A — Push', type:'upper',
+    warmup:'2 min cardio · Arm circles 30s each · Band pull-apart 2×15 · Wall slide 2×10 · Push-up 2×10 slow · DB ramp-up: 50% ×5 → 75% ×3',
+    moves:[
+      {n:'Banded chest press',b:'210 lb',f:'DB bench press',fl:'70 lb each',sets:5,reps:'8'},
+      {n:'Shoulder press',b:'110 lb',f:'DB shoulder press',fl:'35 lb each',sets:5,reps:'9'},
+      {n:'Chest fly',b:'50 lb × 23',f:'DB fly',fl:'25 lb each × 16',sets:4,reps:'see loads'},
+      {n:'Lateral raise',b:'20 lb',f:'DB lateral raise',fl:'15 lb each',sets:4,reps:'21'},
+      {n:'Tricep overhead ext',b:'100 lb × 18',f:'Barbell overhead ext',fl:'55 lb × 14',sets:3,reps:'see loads'},
+      {n:'Side core rotation',b:'70 lb',f:'Side core rotation',fl:'70 lb',sets:3,reps:'10/side',sec:'Core'},
+      {n:'Sled push',b:'—',f:'3 × 20 yd moderate',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
+    ]},
+  { label:'Lower A — Hinge', type:'lower',
+    warmup:'2 min cardio · Hip circles 30s each · 90/90 hip switch 10 each · World\'s greatest stretch 5 each · Leg swings · Glute bridge 2×15 · Banded good morning 2×10 · BW RDL 2×8 · Bar ramp-up → 90% ×1',
+    moves:[
+      {n:'Sled harness sprint',b:'—',f:'4 × 15 yd light',fl:'',sets:4,reps:'15 yd',sec:'Sled primer'},
+      {n:'Banded deadlift',b:'300 lb',f:'Barbell deadlift',fl:'275 lb',sets:5,reps:'10'},
+      {n:'Romanian deadlift',b:'190 lb',f:'Barbell RDL',fl:'205 lb',sets:4,reps:'10'},
+      {n:'Hamstring curl',b:'70 lb',f:'Banded leg curl',fl:'70 lb',sets:3,reps:'17'},
+      {n:'Hip thrusts / KB swing',b:'BW × 30',f:'KB swing',fl:'53 lb',sets:4,reps:'30 / 22'},
+    ]},
+  { label:'Upper B — Pull', type:'upper',
+    warmup:'2 min cardio · Band pull-apart 2×15 · Face pull light band 2×15 · Scapular pull-up 2×8 · Prone Y-T-W 1×8 · Dead hang 2×20–30s',
+    moves:[
+      {n:'Lat pulldown',b:'150 lb',f:'Pull-up',fl:'BW +5 lb',sets:5,reps:'10'},
+      {n:'Banded row',b:'240 lb',f:'KB single-arm row',fl:'70 lb each',sets:5,reps:'10'},
+      {n:'Face pull',b:'50 lb',f:'Banded face pull',fl:'50 lb',sets:4,reps:'23'},
+      {n:'Rear delt fly',b:'20 lb × 21',f:'DB rear delt fly',fl:'15 lb each × 17',sets:3,reps:'see loads'},
+      {n:'Strict bicep curl',b:'100 lb × 18',f:'Barbell curl',fl:'55 lb × 14',sets:3,reps:'see loads'},
+      {n:'Incline curl',b:'90 lb',f:'DB incline curl',fl:'25 lb each',sets:4,reps:'19 / 18'},
+      {n:'Dead bug',b:'BW',f:'Dead bug',fl:'5 lb hold',sets:3,reps:'10/side',sec:'Core'},
+      {n:'Sled pull',b:'—',f:'3 × 20 yd rope/harness',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
+    ]},
+  { label:'Olympic Day', type:'olympic',
+    warmup:'3 min cardio · Hip circles · World\'s greatest stretch 5 each · OH squat PVC 2×10 · Muscle clean empty bar 2×5 · Hang clean empty bar 3×3 · Power clean 50% 3×2',
+    moves:[
+      {n:'Sled push sprint',b:'—',f:'Explosive — light load',fl:'4 × 10 yd',sets:4,reps:'10 yd',sec:'Sled primer'},
+      {n:'Power clean',b:'—',f:'Barbell',fl:'135 lb',sets:5,reps:'3'},
+      {n:'Hang clean',b:'—',f:'Barbell',fl:'125 lb',sets:4,reps:'4'},
+      {n:'Push press',b:'—',f:'Barbell',fl:'115 lb',sets:4,reps:'5'},
+      {n:'Snatch-grip deadlift',b:'—',f:'Barbell',fl:'195 lb',sets:3,reps:'5'},
+      {n:'Barbell good morning',b:'—',f:'Barbell',fl:'90 lb',sets:3,reps:'10'},
+      {n:'KB complex',b:'—',f:'Swing+clean+press',fl:'40 lb',sets:3,reps:'5+5+5'},
+      {n:'Hollow body hold',b:'—',f:'BW',fl:'BW',sets:3,reps:'50s',sec:'Core'},
+    ]},
+  { label:'Lower B — Quad', type:'lower',
+    warmup:'2 min cardio · Leg swings · Walking lunge BW 2×10 · Goblet squat light KB 2×10 · Box step-up BW 2×8 each · Bar ramp-up front + back squat',
+    moves:[
+      {n:'Front squat',b:'170 lb',f:'Barbell front squat',fl:'145 lb',sets:4,reps:'10'},
+      {n:'Back squat',b:'170 lb',f:'Barbell back squat',fl:'185 lb',sets:4,reps:'10'},
+      {n:'Quad extension / step-up',b:'90 lb',f:'DB step-up',fl:'25 lb each',sets:4,reps:'19'},
+      {n:'Reverse lunge',b:'BW × 19/leg',f:'KB reverse lunge',fl:'35 lb each × 16/leg',sets:4,reps:'see loads'},
+      {n:'Calf raises',b:'BW × 37',f:'Standing calf raise',fl:'45 lb plate × 35',sets:4,reps:'see loads'},
+      {n:'Sled push + pull circuit',b:'—',f:'3 rounds 20 yd push → pull',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
+      {n:"KB farmer's carry",b:'—',f:'KB',fl:'53 lb each',sets:3,reps:'40 yd',sec:'Carry'},
+    ]},
+];
+
+const SEED_LOGS = [
+  {week:10,day:'Day 1 — Upper A (Push)',result:'mixed',notes:'Chest press reduced to 210 lb 5×10. Shoulder press failed set 4 and 5 at 7 reps (110 lb).',date:'Week 10'},
+  {week:11,day:'Day 1 — Upper A (Push)',result:'hit',notes:'Transitioned to free weights. DB bench primary. All upper work hit.',date:'Week 11'},
+  {week:12,day:'Day 1 — Upper A (Push)',result:'hit',notes:'Bench 135×10×5, OHP 75×10×5, Chest fly 25lb×12×4, Lat raise 15lb×16×4, Tricep 55lb barbell×10×3.',date:'Week 12'},
+  {week:12,day:'Day 2 — Lower A (Hinge)',result:'hit',notes:'Barbell deadlift 235×10×5, Barbell RDL 165×10×4, Banded leg curl 70lb×13×3. Hip thrusts BW only.',date:'Week 12'},
+  {week:12,day:'Day 3 — Upper B (Pull)',result:'mixed',notes:'Pull-ups BW×6×5. Bent-over row 115×10×5 (below prescribed). Banded face pull as written. DB rear delt fly 15lb×12×3. Barbell curl 50lb.',date:'Week 12'},
+  {week:13,day:'Day 1 — Upper A (Push)',result:'hit',notes:'All movements hit as prescribed.',date:'Week 13'},
+  {week:13,day:'Day 2 — Lower A (Hinge)',result:'hit',notes:'All movements hit as prescribed.',date:'Week 13'},
+  {week:13,day:'Day 3 — Upper B (Pull)',result:'mixed',notes:'Bent-over row only 5×8 at 125lb. All else hit.',date:'Week 13'},
+  {week:14,day:'Day 1 — Upper A (Push)',result:'hit',notes:'All movements hit.',date:'Week 14'},
+  {week:15,day:'Day 1 — Upper A (Push)',result:'hit',notes:'All upper work hit across the board.',date:'Week 15'},
+  {week:17,day:'Day 1 — Upper A (Push)',result:'hit',notes:'DB bench 70lb×8×5 primary. All movements hit.',date:'Week 17'},
+];
+
+const DEFAULT_EQ = [
+  {name:'10 lb band',type:'Band'},{name:'20 lb band',type:'Band'},{name:'30 lb band',type:'Band'},
+  {name:'40 lb band',type:'Band'},{name:'50 lb band',type:'Band'},
+  {name:'10 lb KB',type:'Kettlebell'},{name:'35 lb KB ×2',type:'Kettlebell'},
+  {name:'53 lb KB ×2',type:'Kettlebell'},{name:'70 lb KB',type:'Kettlebell'},
+  {name:'25 lb DB pair',type:'Dumbbell'},{name:'35 lb DB pair',type:'Dumbbell'},
+  {name:'50 lb DB pair',type:'Dumbbell'},{name:'70 lb DB pair',type:'Dumbbell'},
+  {name:'Barbell + plates',type:'Barbell'},{name:'Push/pull sled',type:'Sled'},
+  {name:'Harness',type:'Sled'},{name:'Pull-up bar',type:'Other'},{name:'Dip station',type:'Other'},
+];
+
+const POOL = {
+  horizontal_push:[
+    {n:'DB bench press',b:'Banded chest press',bl:'210 lb',f:'DB bench press',fl:'70 lb each'},
+    {n:'DB floor press',b:'Banded chest press',bl:'200 lb',f:'DB floor press',fl:'65 lb each'},
+    {n:'DB incline press',b:'Banded incline press',bl:'180 lb',f:'DB incline press',fl:'55 lb each'},
+    {n:'DB decline press',b:'Banded chest press',bl:'200 lb',f:'DB decline press',fl:'60 lb each'},
+    {n:'DB close-grip press',b:'Banded close-grip press',bl:'190 lb',f:'DB close-grip press',fl:'55 lb each'},
+    {n:'DB neutral-grip press',b:'Banded chest press',bl:'200 lb',f:'DB neutral-grip press',fl:'65 lb each'},
+    {n:'KB bench press',b:'Banded chest press',bl:'190 lb',f:'KB bench press',fl:'53 lb each'},
+    {n:'KB floor press',b:'Banded chest press',bl:'180 lb',f:'KB floor press',fl:'53 lb each'},
+    {n:'Push-up weighted',b:'Banded push-up',bl:'50 lb',f:'Weighted push-up',fl:'+45 lb plate'},
+    {n:'Band-resisted push-up',b:'Band push-up',bl:'60 lb',f:'Band push-up',fl:'BW +60 lb'},
+    {n:'DB 1-arm floor press',b:'Banded 1-arm press',bl:'100 lb',f:'DB 1-arm floor press',fl:'65 lb'},
+    {n:'DB squeeze press',b:'Banded chest press',bl:'190 lb',f:'DB squeeze press',fl:'55 lb each'},
+  ],
+  vertical_push:[
+    {n:'DB shoulder press',b:'Banded shoulder press',bl:'110 lb',f:'DB shoulder press',fl:'35 lb each'},
+    {n:'DB arnold press',b:'Banded shoulder press',bl:'100 lb',f:'DB arnold press',fl:'30 lb each'},
+    {n:'KB military press',b:'Banded OHP',bl:'110 lb',f:'KB military press',fl:'53 lb each'},
+    {n:'KB push press',b:'Banded push press',bl:'120 lb',f:'KB push press',fl:'53 lb each'},
+    {n:'KB Z-press',b:'Banded shoulder press',bl:'90 lb',f:'KB Z-press',fl:'35 lb each'},
+    {n:'DB Z-press',b:'Banded shoulder press',bl:'90 lb',f:'DB Z-press',fl:'30 lb each'},
+    {n:'DB single-arm press',b:'Banded 1-arm press',bl:'60 lb',f:'DB single-arm press',fl:'35 lb'},
+    {n:'KB single-arm press',b:'Banded 1-arm press',bl:'60 lb',f:'KB single-arm press',fl:'53 lb'},
+    {n:'Landmine press',b:'Banded OHP',bl:'90 lb',f:'Landmine press',fl:'65 lb'},
+    {n:'DB push press',b:'Banded push press',bl:'110 lb',f:'DB push press',fl:'35 lb each'},
+    {n:'Pike push-up',b:'Banded pike push-up',bl:'40 lb',f:'Pike push-up',fl:'BW'},
+  ],
+  chest_acc:[
+    {n:'DB chest fly',b:'Banded chest fly',bl:'50 lb',f:'DB chest fly',fl:'25 lb each'},
+    {n:'DB incline fly',b:'Banded incline fly',bl:'40 lb',f:'DB incline fly',fl:'20 lb each'},
+    {n:'DB pullover',b:'Banded pullover',bl:'40 lb',f:'DB pullover',fl:'50 lb'},
+    {n:'KB pullover',b:'Banded pullover',bl:'40 lb',f:'KB pullover',fl:'53 lb'},
+    {n:'DB svend press',b:'Banded chest',bl:'30 lb',f:'DB svend press',fl:'25 lb each'},
+    {n:'Band standing fly',b:'Band standing fly',bl:'40 lb',f:'Band standing fly',fl:'40 lb'},
+    {n:'Band low-to-high fly',b:'Band fly',bl:'30 lb',f:'Band low-to-high fly',fl:'30 lb'},
+    {n:'Band high-to-low fly',b:'Band fly',bl:'30 lb',f:'Band high-to-low fly',fl:'30 lb'},
+  ],
+  shoulder_acc:[
+    {n:'DB lateral raise',b:'Banded lateral raise',bl:'20 lb',f:'DB lateral raise',fl:'15 lb each'},
+    {n:'KB lateral raise',b:'Banded lateral raise',bl:'20 lb',f:'KB lateral raise',fl:'10 lb each'},
+    {n:'DB front raise',b:'Banded front raise',bl:'20 lb',f:'DB front raise',fl:'20 lb each'},
+    {n:'DB upright row',b:'Banded upright row',bl:'30 lb',f:'DB upright row',fl:'25 lb each'},
+    {n:'KB upright row',b:'Banded upright row',bl:'30 lb',f:'KB upright row',fl:'35 lb each'},
+    {n:'DB 3-way raise',b:'Banded 3-way raise',bl:'20 lb',f:'DB 3-way raise',fl:'12 lb each'},
+    {n:'Band pull-apart',b:'Band pull-apart',bl:'20 lb',f:'Band pull-apart',fl:'20 lb'},
+    {n:'KB bottoms-up press',b:'Banded shoulder press',bl:'80 lb',f:'KB bottoms-up press',fl:'35 lb each'},
+    {n:'DB Cuban press',b:'Banded Cuban press',bl:'20 lb',f:'DB Cuban press',fl:'15 lb each'},
+    {n:'Band YTW raise',b:'Band YTW',bl:'15 lb',f:'DB YTW',fl:'10 lb each'},
+  ],
+  tricep:[
+    {n:'Barbell overhead ext',b:'Banded overhead ext',bl:'100 lb',f:'Barbell overhead ext',fl:'55 lb'},
+    {n:'DB overhead ext',b:'Banded overhead ext',bl:'90 lb',f:'DB overhead ext',fl:'50 lb'},
+    {n:'KB overhead ext',b:'Banded overhead ext',bl:'90 lb',f:'KB overhead ext',fl:'35 lb'},
+    {n:'DB skull crusher',b:'Banded skull crusher',bl:'80 lb',f:'DB skull crusher',fl:'30 lb each'},
+    {n:'DB tate press',b:'Banded tate press',bl:'60 lb',f:'DB tate press',fl:'25 lb each'},
+    {n:'DB kickback',b:'Banded kickback',bl:'30 lb',f:'DB kickback',fl:'25 lb each'},
+    {n:'KB kickback',b:'Banded kickback',bl:'30 lb',f:'KB kickback',fl:'25 lb'},
+    {n:'Diamond push-up',b:'Banded diamond push-up',bl:'40 lb',f:'Weighted diamond push-up',fl:'+25 lb'},
+    {n:'Dip weighted',b:'Banded dip',bl:'80 lb',f:'Weighted dip',fl:'+25 lb'},
+    {n:'Band pushdown',b:'Band pushdown',bl:'50 lb',f:'Band pushdown',fl:'50 lb'},
+    {n:'KB floor skull crusher',b:'Banded skull crusher',bl:'70 lb',f:'KB floor skull crusher',fl:'35 lb each'},
+  ],
+  vertical_pull:[
+    {n:'Pull-up',b:'Banded lat pulldown',bl:'150 lb',f:'Pull-up',fl:'BW +5 lb'},
+    {n:'Chin-up',b:'Banded lat pulldown',bl:'150 lb',f:'Chin-up',fl:'BW +5 lb'},
+    {n:'Neutral-grip pull-up',b:'Banded lat pulldown',bl:'140 lb',f:'Neutral-grip pull-up',fl:'BW'},
+    {n:'Wide-grip pull-up',b:'Banded lat pulldown',bl:'150 lb',f:'Wide-grip pull-up',fl:'BW'},
+    {n:'Weighted pull-up',b:'Banded lat pulldown',bl:'150 lb',f:'Weighted pull-up',fl:'BW +10 lb'},
+    {n:'Straight-arm pulldown',b:'Band pulldown',bl:'50 lb',f:'Band straight-arm pulldown',fl:'50 lb'},
+    {n:'KB pullover',b:'Banded pullover',bl:'60 lb',f:'KB pullover',fl:'53 lb'},
+    {n:'DB pullover',b:'Banded pullover',bl:'60 lb',f:'DB pullover',fl:'50 lb'},
+    {n:'Band lat prayer',b:'Band lat prayer',bl:'40 lb',f:'Band lat prayer',fl:'40 lb'},
+  ],
+  horizontal_pull:[
+    {n:'KB single-arm row',b:'Banded row',bl:'240 lb',f:'KB single-arm row',fl:'70 lb'},
+    {n:'DB single-arm row',b:'Banded row',bl:'230 lb',f:'DB single-arm row',fl:'70 lb'},
+    {n:'Barbell bent-over row',b:'Banded row',bl:'240 lb',f:'Barbell bent-over row',fl:'135 lb'},
+    {n:'Barbell pendlay row',b:'Banded row',bl:'230 lb',f:'Barbell pendlay row',fl:'125 lb'},
+    {n:'DB chest-supported row',b:'Banded row',bl:'220 lb',f:'DB chest-supported row',fl:'50 lb each'},
+    {n:'DB seal row',b:'Banded row',bl:'210 lb',f:'DB seal row',fl:'45 lb each'},
+    {n:'Meadows row',b:'Banded row',bl:'200 lb',f:'Meadows row',fl:'70 lb'},
+    {n:'DB renegade row',b:'Banded row',bl:'160 lb',f:'DB renegade row',fl:'35 lb each'},
+    {n:'KB renegade row',b:'Banded row',bl:'160 lb',f:'KB renegade row',fl:'35 lb each'},
+    {n:'Inverted row',b:'Banded row',bl:'150 lb',f:'Inverted row (bar)',fl:'BW'},
+    {n:'Landmine row',b:'Banded row',bl:'200 lb',f:'Landmine row',fl:'70 lb'},
+    {n:'Band seated row',b:'Banded seated row',bl:'200 lb',f:'Band seated row',fl:'200 lb'},
+  ],
+  rear_delt:[
+    {n:'DB rear delt fly',b:'Banded rear delt fly',bl:'20 lb',f:'DB rear delt fly',fl:'15 lb each'},
+    {n:'KB rear delt fly',b:'Banded rear delt fly',bl:'20 lb',f:'KB rear delt fly',fl:'10 lb each'},
+    {n:'Face pull',b:'Banded face pull',bl:'50 lb',f:'Banded face pull',fl:'50 lb'},
+    {n:'DB prone Y-raise',b:'Banded rear delt',bl:'20 lb',f:'DB prone Y-raise',fl:'10 lb each'},
+    {n:'KB batwing row',b:'Banded batwing row',bl:'30 lb',f:'KB batwing row',fl:'25 lb each'},
+    {n:'Band pull-apart',b:'Band pull-apart',bl:'20 lb',f:'Band pull-apart',fl:'20 lb'},
+    {n:'DB 90° row wide elbows',b:'Banded rear delt row',bl:'20 lb',f:'DB 90° row',fl:'15 lb each'},
+    {n:'KB halo',b:'Band halo',bl:'15 lb',f:'KB halo',fl:'25 lb'},
+  ],
+  bicep:[
+    {n:'Barbell curl',b:'Banded curl',bl:'100 lb',f:'Barbell curl',fl:'55 lb'},
+    {n:'DB alternating curl',b:'Banded curl',bl:'90 lb',f:'DB alternating curl',fl:'30 lb each'},
+    {n:'DB incline curl',b:'Banded incline curl',bl:'90 lb',f:'DB incline curl',fl:'25 lb each'},
+    {n:'DB hammer curl',b:'Banded hammer curl',bl:'80 lb',f:'DB hammer curl',fl:'35 lb each'},
+    {n:'DB cross-body hammer',b:'Banded cross-body curl',bl:'80 lb',f:'DB cross-body hammer',fl:'30 lb each'},
+    {n:'KB curl',b:'Banded curl',bl:'90 lb',f:'KB curl',fl:'35 lb each'},
+    {n:'DB concentration curl',b:'Banded concentration curl',bl:'70 lb',f:'DB concentration curl',fl:'30 lb'},
+    {n:'DB spider curl',b:'Banded spider curl',bl:'80 lb',f:'DB spider curl',fl:'25 lb each'},
+    {n:'DB zottman curl',b:'Banded curl',bl:'80 lb',f:'DB zottman curl',fl:'25 lb each'},
+    {n:'Barbell reverse curl',b:'Banded reverse curl',bl:'70 lb',f:'Barbell reverse curl',fl:'35 lb'},
+    {n:'DB drag curl',b:'Banded drag curl',bl:'80 lb',f:'DB drag curl',fl:'30 lb each'},
+    {n:'DB 21s',b:'Banded 21s',bl:'80 lb',f:'DB 21s',fl:'25 lb each'},
+    {n:'DB preacher curl',b:'Banded preacher curl',bl:'80 lb',f:'DB preacher curl',fl:'25 lb each'},
+  ],
+  hinge_primary:[
+    {n:'Barbell deadlift',b:'Banded deadlift',bl:'300 lb',f:'Barbell deadlift',fl:'275 lb'},
+    {n:'KB sumo deadlift',b:'Banded sumo DL',bl:'280 lb',f:'KB sumo deadlift',fl:'70 lb'},
+    {n:'DB deadlift',b:'Banded deadlift',bl:'260 lb',f:'DB deadlift',fl:'70 lb each'},
+    {n:'KB single-leg deadlift',b:'Banded SL DL',bl:'200 lb',f:'KB SL deadlift',fl:'53 lb each'},
+    {n:'DB single-leg deadlift',b:'Banded SL DL',bl:'180 lb',f:'DB SL deadlift',fl:'50 lb each'},
+    {n:'Barbell sumo deadlift',b:'Banded sumo DL',bl:'290 lb',f:'Barbell sumo DL',fl:'255 lb'},
+    {n:'KB double deadlift',b:'Banded deadlift',bl:'270 lb',f:'KB double DL',fl:'53 lb each'},
+  ],
+  hinge_secondary:[
+    {n:'Barbell RDL',b:'Banded RDL',bl:'190 lb',f:'Barbell RDL',fl:'205 lb'},
+    {n:'DB RDL',b:'Banded RDL',bl:'190 lb',f:'DB RDL',fl:'70 lb each'},
+    {n:'KB RDL',b:'Banded RDL',bl:'180 lb',f:'KB RDL',fl:'53 lb each'},
+    {n:'KB single-leg RDL',b:'Banded SL RDL',bl:'120 lb',f:'KB SL RDL',fl:'53 lb'},
+    {n:'DB single-leg RDL',b:'Banded SL RDL',bl:'120 lb',f:'DB SL RDL',fl:'50 lb each'},
+    {n:'Barbell good morning',b:'Banded good morning',bl:'100 lb',f:'Barbell good morning',fl:'95 lb'},
+    {n:'45° back extension',b:'Banded back ext',bl:'60 lb',f:'Weighted back ext',fl:'+45 lb'},
+    {n:'KB stiff-leg DL',b:'Banded RDL',bl:'180 lb',f:'KB stiff-leg DL',fl:'70 lb each'},
+    {n:'Landmine RDL',b:'Banded RDL',bl:'170 lb',f:'Landmine RDL',fl:'70 lb'},
+  ],
+  hamstring:[
+    {n:'Hamstring curl band',b:'Banded leg curl',bl:'70 lb',f:'Banded leg curl',fl:'70 lb'},
+    {n:'Nordic curl eccentric',b:'Banded nordic curl',bl:'40 lb',f:'Nordic curl',fl:'BW'},
+    {n:'KB leg curl prone',b:'Banded leg curl',bl:'70 lb',f:'KB leg curl prone',fl:'35 lb'},
+    {n:'DB leg curl prone',b:'Banded leg curl',bl:'70 lb',f:'DB leg curl prone',fl:'25 lb'},
+    {n:'Single-leg band curl',b:'Single-leg band curl',bl:'50 lb',f:'Single-leg band curl',fl:'50 lb'},
+    {n:'Standing band curl',b:'Standing band curl',bl:'50 lb',f:'Standing band curl',fl:'50 lb'},
+  ],
+  glute:[
+    {n:'KB swing 2-hand',b:'Banded pull-through',bl:'70 lb',f:'KB 2-hand swing',fl:'70 lb'},
+    {n:'KB swing 1-hand',b:'Banded pull-through',bl:'60 lb',f:'KB swing',fl:'53 lb'},
+    {n:'KB American swing',b:'Banded pull-through',bl:'60 lb',f:'KB American swing',fl:'53 lb'},
+    {n:'Barbell hip thrust',b:'BW hip thrust',bl:'BW',f:'Barbell hip thrust',fl:'95 lb'},
+    {n:'DB hip thrust',b:'BW hip thrust',bl:'BW',f:'DB hip thrust',fl:'70 lb each'},
+    {n:'Single-leg hip thrust',b:'Banded SL hip thrust',bl:'40 lb',f:'Single-leg hip thrust',fl:'BW'},
+    {n:'Glute bridge barbell',b:'Banded glute bridge',bl:'60 lb',f:'Barbell glute bridge',fl:'135 lb'},
+    {n:'Single-leg glute bridge',b:'Banded SL bridge',bl:'40 lb',f:'Single-leg glute bridge',fl:'+45 lb'},
+    {n:'Lateral band walk',b:'Lateral band walk',bl:'20 lb',f:'Lateral band walk',fl:'20 lb'},
+    {n:'Donkey kick band',b:'Banded donkey kick',bl:'30 lb',f:'Banded donkey kick',fl:'30 lb'},
+    {n:'Banded clamshell',b:'Banded clamshell',bl:'20 lb',f:'Banded clamshell',fl:'20 lb'},
+  ],
+  quad_primary:[
+    {n:'Barbell front squat',b:'Banded front squat',bl:'170 lb',f:'Barbell front squat',fl:'145 lb'},
+    {n:'Barbell back squat',b:'Banded back squat',bl:'170 lb',f:'Barbell back squat',fl:'185 lb'},
+    {n:'DB goblet squat',b:'Banded goblet squat',bl:'130 lb',f:'DB goblet squat',fl:'70 lb'},
+    {n:'KB goblet squat',b:'Banded goblet squat',bl:'130 lb',f:'KB goblet squat',fl:'70 lb'},
+    {n:'KB front rack squat',b:'Banded front squat',bl:'150 lb',f:'KB front rack squat',fl:'53 lb each'},
+    {n:'DB Bulgarian split squat',b:'Banded split squat',bl:'130 lb',f:'DB Bulgarian split squat',fl:'35 lb each'},
+    {n:'KB Bulgarian split squat',b:'Banded split squat',bl:'120 lb',f:'KB Bulgarian split squat',fl:'35 lb each'},
+    {n:'Barbell box squat',b:'Banded box squat',bl:'160 lb',f:'Barbell box squat',fl:'165 lb'},
+    {n:'Barbell zercher squat',b:'Banded squat',bl:'150 lb',f:'Barbell zercher squat',fl:'135 lb'},
+  ],
+  quad_acc:[
+    {n:'DB step-up',b:'Banded step-up',bl:'90 lb',f:'DB step-up',fl:'25 lb each'},
+    {n:'KB step-up',b:'Banded step-up',bl:'90 lb',f:'KB step-up',fl:'35 lb each'},
+    {n:'DB reverse lunge',b:'BW reverse lunge',bl:'BW',f:'DB reverse lunge',fl:'35 lb each'},
+    {n:'KB reverse lunge',b:'BW reverse lunge',bl:'BW',f:'KB reverse lunge',fl:'35 lb each'},
+    {n:'DB walking lunge',b:'Banded lunge',bl:'60 lb',f:'DB walking lunge',fl:'35 lb each'},
+    {n:'KB walking lunge',b:'Banded lunge',bl:'60 lb',f:'KB walking lunge',fl:'35 lb each'},
+    {n:'DB lateral lunge',b:'Banded lateral lunge',bl:'40 lb',f:'DB lateral lunge',fl:'25 lb each'},
+    {n:'DB curtsy lunge',b:'Banded curtsy lunge',bl:'40 lb',f:'DB curtsy lunge',fl:'25 lb each'},
+    {n:'Sissy squat',b:'Banded sissy squat',bl:'30 lb',f:'BW sissy squat',fl:'BW'},
+    {n:'Quad extension band',b:'Banded quad ext',bl:'90 lb',f:'Banded quad ext couch',fl:'90 lb'},
+    {n:'Barbell reverse lunge',b:'Banded reverse lunge',bl:'100 lb',f:'Barbell reverse lunge',fl:'95 lb'},
+  ],
+  calf:[
+    {n:'Standing calf raise',b:'BW calf raise',bl:'BW',f:'Standing calf raise',fl:'+45 lb plate'},
+    {n:'Single-leg calf raise',b:'BW single-leg calf',bl:'BW',f:'Single-leg calf raise',fl:'+25 lb'},
+    {n:'KB calf raise',b:'Banded calf raise',bl:'40 lb',f:'KB calf raise',fl:'53 lb each'},
+    {n:'DB calf raise',b:'Banded calf raise',bl:'40 lb',f:'DB calf raise',fl:'70 lb each'},
+    {n:'Seated calf raise DB',b:'Banded seated calf',bl:'40 lb',f:'DB seated calf raise',fl:'50 lb each'},
+    {n:'Banded calf raise',b:'Banded calf raise',bl:'50 lb',f:'Banded calf raise',fl:'50 lb'},
+    {n:'Barbell calf raise',b:'Banded calf raise',bl:'50 lb',f:'Barbell calf raise',fl:'95 lb'},
+    {n:'Eccentric calf lower',b:'BW calf raise',bl:'BW',f:'Eccentric calf lower step',fl:'BW'},
+  ],
+  core_antirot:[
+    {n:'Side core rotation band',b:'Side rotation',bl:'70 lb',f:'Side rotation',fl:'70 lb'},
+    {n:'Pallof press',b:'Pallof press',bl:'30 lb',f:'Pallof press',fl:'30 lb'},
+    {n:'KB suitcase carry',b:'Side plank',bl:'BW',f:'KB suitcase carry',fl:'53 lb'},
+    {n:'Band chop high-to-low',b:'Band chop',bl:'40 lb',f:'Band chop',fl:'40 lb'},
+  ],
+  core_antiext:[
+    {n:'Dead bug',b:'Dead bug',bl:'BW',f:'Dead bug +5 lb',fl:'5 lb'},
+    {n:'Ab wheel rollout',b:'Banded rollout',bl:'30 lb',f:'Ab wheel rollout',fl:'BW'},
+    {n:'Weighted plank',b:'Plank',bl:'BW',f:'Weighted plank',fl:'+25 lb'},
+    {n:'RKC plank',b:'RKC plank',bl:'BW',f:'RKC plank',fl:'BW'},
+  ],
+  core_flex:[
+    {n:'Hollow body hold',b:'Hollow body',bl:'BW',f:'Hollow body hold',fl:'BW'},
+    {n:'Band crunch kneeling',b:'Banded crunch',bl:'40 lb',f:'Banded crunch',fl:'40 lb'},
+    {n:'Hanging knee raise',b:'Banded crunch',bl:'30 lb',f:'Hanging knee raise',fl:'BW'},
+    {n:'Hanging leg raise',b:'Banded crunch',bl:'30 lb',f:'Hanging leg raise',fl:'BW'},
+    {n:'KB windmill',b:'Band windmill',bl:'20 lb',f:'KB windmill',fl:'35 lb'},
+  ],
+};
+
+const DAY_TEMPLATES = [
+  {label:'Upper A',slots:[
+    {cat:'horizontal_push',sets:5,reps:'8'},{cat:'vertical_push',sets:5,reps:'9'},
+    {cat:'chest_acc',sets:4,reps:'15'},{cat:'shoulder_acc',sets:4,reps:'21'},
+    {cat:'tricep',sets:3,reps:'12'},
+    {cat:'core_antirot',sec:'Core',sets:3,reps:'10/side',lock:true},
+    {cat:'sled',sec:'Sled',sets:3,reps:'20 yd',lock:true,fixed:{n:'Sled push',b:'—',bl:'—',f:'3×20 yd moderate',fl:''}},
+  ]},
+  {label:'Lower A',slots:[
+    {cat:'sled',sec:'Sled primer',sets:4,reps:'15 yd',lock:true,fixed:{n:'Sled harness sprint',b:'—',bl:'—',f:'4×15 yd light',fl:''}},
+    {cat:'hinge_primary',sets:5,reps:'10'},{cat:'hinge_secondary',sets:4,reps:'10'},
+    {cat:'hamstring',sets:3,reps:'17'},{cat:'glute',sets:4,reps:'22'},
+  ]},
+  {label:'Upper B',slots:[
+    {cat:'vertical_pull',sets:5,reps:'10'},{cat:'horizontal_pull',sets:5,reps:'10'},
+    {cat:'rear_delt',sets:4,reps:'18'},{cat:'rear_delt',sets:3,reps:'17'},
+    {cat:'bicep',sets:3,reps:'14'},{cat:'bicep',sets:4,reps:'18'},
+    {cat:'core_antiext',sec:'Core',sets:3,reps:'10/side',lock:true},
+    {cat:'sled',sec:'Sled',sets:3,reps:'20 yd',lock:true,fixed:{n:'Sled pull rope/harness',b:'—',bl:'—',f:'3×20 yd moderate',fl:''}},
+  ]},
+  {label:'Olympic',slots:[
+    {cat:'sled',sec:'Sled primer',sets:4,reps:'10 yd',lock:true,fixed:{n:'Sled push sprint',b:'—',bl:'—',f:'4×10 yd explosive',fl:''}},
+    {cat:'oly',lock:true,fixed:{n:'Power clean',b:'—',bl:'—',f:'Barbell',fl:'135 lb'},sets:5,reps:'3'},
+    {cat:'oly',lock:true,fixed:{n:'Hang clean',b:'—',bl:'—',f:'Barbell',fl:'125 lb'},sets:4,reps:'4'},
+    {cat:'oly',lock:true,fixed:{n:'Push press',b:'—',bl:'—',f:'Barbell',fl:'115 lb'},sets:4,reps:'5'},
+    {cat:'oly',lock:true,fixed:{n:'Snatch-grip deadlift',b:'—',bl:'—',f:'Barbell',fl:'195 lb'},sets:3,reps:'5'},
+    {cat:'oly',lock:true,fixed:{n:'Barbell good morning',b:'—',bl:'—',f:'Barbell',fl:'90 lb'},sets:3,reps:'10'},
+    {cat:'oly',lock:true,fixed:{n:'KB complex',b:'—',bl:'—',f:'Swing+clean+press',fl:'40 lb'},sets:3,reps:'5+5+5'},
+    {cat:'core_flex',sec:'Core',lock:true,sets:3,reps:'50s',fixed:{n:'Hollow body hold',b:'—',bl:'—',f:'BW',fl:'BW'}},
+  ]},
+  {label:'Lower B',slots:[
+    {cat:'quad_primary',sets:4,reps:'10'},{cat:'quad_primary',sets:4,reps:'10'},
+    {cat:'quad_acc',sets:4,reps:'19'},{cat:'quad_acc',sets:4,reps:'16/leg'},
+    {cat:'calf',sets:4,reps:'35'},
+    {cat:'sled',sec:'Sled',sets:3,reps:'20 yd',lock:true,fixed:{n:'Sled push+pull circuit',b:'—',bl:'—',f:'3 rounds 20yd push→pull',fl:''}},
+    {cat:'carry',sec:'Carry',sets:3,reps:'40 yd',lock:true,fixed:{n:"KB farmer's carry",b:'—',bl:'—',f:'KB',fl:"53 lb each"}},
+  ]},
+];
+
+function rnd(cat,excl){const p=(POOL[cat]||[]).filter(m=>m.n!==excl);return p.length?p[Math.floor(Math.random()*p.length)]:null;}
+
+function buildRandDay(tmpl){
+  return tmpl.slots.map(s=>{
+    const locked=!!(s.lock||(s.cat&&(s.cat.startsWith('core')||s.cat==='sled'||s.cat==='carry'||s.cat==='oly')));
+    if(s.fixed)return{...s,mov:s.fixed,isNew:false,locked:true};
+    const m=rnd(s.cat,null);
+    return{...s,mov:m||{n:'—',b:'—',bl:'—',f:'—',fl:''},isNew:false,locked};
+  });
+}
+
+let ST = {
+  week:17, progDay:0, randDay:0,
+  logs:[...SEED_LOGS],
+  eq:[...DEFAULT_EQ],
+  randDays: DAY_TEMPLATES.map(d=>buildRandDay(d))
+};
+
+function showScreen(id,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('s-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='program')renderProgDay(ST.progDay);
+  if(id==='history')renderHistory();
+  if(id==='equipment')renderEq();
+  if(id==='random')renderRandDay();
+}
+
+// PROGRAM
+function renderProgChips(){
+  const el=document.getElementById('prog-day-chips');
+  el.innerHTML=W17.map((d,i)=>`<div class="day-chip${i===ST.progDay?' active':''}" onclick="setProgDay(${i})">${d.label.split('—')[0].trim()}</div>`).join('');
+}
+function setProgDay(i){ST.progDay=i;renderProgChips();renderProgDay(i);}
+function renderProgDay(i){
+  const day=W17[i];
+  document.getElementById('prog-warmup').textContent=day.warmup;
+  let html='<thead><tr><th style="width:38%">Movement</th><th style="width:17%">Band</th><th style="width:18%">Free weight</th><th style="width:8%;text-align:center">Sets</th><th style="width:19%;text-align:center">Reps</th></tr></thead><tbody>';
+  let lastSec=null;
+  day.moves.forEach(m=>{
+    if(m.sec!==lastSec){if(m.sec)html+=`<tr class="sec-row"><td colspan="5">${m.sec}</td></tr>`;lastSec=m.sec||null;}
+    const bc=m.b&&m.b!=='—'?`<span class="load-b">${m.b}</span>`:'<span style="color:var(--mid)">—</span>';
+    let fc='';
+    if(m.f&&m.f!=='—')fc+=`<span style="font-size:12px">${m.f}</span>`;
+    if(m.fl)fc+=`${m.f&&m.f!=='—'?'<br>':''}<span class="load-f">${m.fl}</span>`;
+    if(!fc)fc='<span style="color:var(--mid)">—</span>';
+    html+=`<tr><td><div class="ex-name">${m.n}</div></td><td>${bc}</td><td>${fc}</td><td class="num-cell">${m.sets}</td><td class="num-cell">${m.reps}</td></tr>`;
+  });
+  html+='</tbody>';
+  document.getElementById('prog-table').innerHTML=html;
+}
+
+// LOG
+function saveLog(){
+  const entry={week:parseInt(document.getElementById('log-week').value),day:document.getElementById('log-day').value,result:document.getElementById('log-result').value,notes:document.getElementById('log-notes').value,date:new Date().toLocaleDateString()};
+  ST.logs.unshift(entry);
+  ST.week=Math.max(ST.week,entry.week);
+  saveState();
+  document.getElementById('log-confirm').textContent='Saved ✓';
+  document.getElementById('log-notes').value='';
+  setTimeout(()=>document.getElementById('log-confirm').textContent='',2500);
+  document.getElementById('m-sessions').textContent=ST.logs.length;
+  document.getElementById('m-week').textContent=ST.week;
+  document.getElementById('wk-num').textContent=ST.week;
+  document.getElementById('log-week').value=ST.week;
+}
+
+// HISTORY
+function renderHistory(){
+  const el=document.getElementById('history-list');
+  if(!ST.logs.length){el.innerHTML='<p style="color:var(--mid);font-size:13px;text-align:center;padding:20px 0">No sessions logged yet.</p>';return;}
+  el.innerHTML=ST.logs.map(l=>{
+    const cls=l.result==='hit'?'s-hit':l.result==='mixed'?'s-mixed':'s-tough';
+    const lbl=l.result==='hit'?'Hit everything':l.result==='mixed'?'Mixed':'Tough week';
+    return`<div class="history-item"><div class="history-week">Week ${l.week}</div><div class="history-day">${l.day}</div><div class="history-meta"><span class="history-date">${l.date}</span><span class="status-pill ${cls}">${lbl}</span></div>${l.notes?`<div class="history-notes">${l.notes}</div>`:''}</div>`;
+  }).join('');
+}
+
+// EQUIPMENT
+function renderEq(){
+  document.getElementById('eq-list').innerHTML=ST.eq.map((e,i)=>`<div class="eq-item"><div><div class="eq-type">${e.type}</div><div class="eq-name">${e.name}</div></div><button class="eq-del" onclick="delEq(${i})" aria-label="Remove">×</button></div>`).join('');
+}
+function addEq(){
+  const n=document.getElementById('eq-name').value.trim();
+  if(!n)return;
+  ST.eq.push({name:n,type:document.getElementById('eq-type').value});
+  document.getElementById('eq-name').value='';
+  saveState();renderEq();
+}
+function delEq(i){ST.eq.splice(i,1);saveState();renderEq();}
+
+// RANDOMIZER
+function renderRandChips(){
+  const el=document.getElementById('rand-day-chips');
+  el.innerHTML=DAY_TEMPLATES.map((d,i)=>`<div class="day-chip${i===ST.randDay?' active':''}" onclick="setRandDay(${i})">${d.label}</div>`).join('');
+}
+function setRandDay(i){ST.randDay=i;renderRandChips();renderRandDay();}
+function randDay(){ST.randDays[ST.randDay]=doRand(ST.randDays[ST.randDay]);renderRandDay();}
+function randAll(){ST.randDays=ST.randDays.map(d=>doRand(d));renderRandDay();}
+function resetRandDay(){ST.randDays[ST.randDay]=buildRandDay(DAY_TEMPLATES[ST.randDay]);renderRandDay();}
+function doRand(slots){
+  return slots.map(s=>{
+    if(s.locked)return{...s,isNew:false};
+    const cur=s.mov?s.mov.n:null;
+    const m=rnd(s.cat,cur);
+    return{...s,mov:m||s.mov,isNew:!!(m&&m.n!==cur)};
+  });
+}
+function swapOne(i){
+  const s=ST.randDays[ST.randDay][i];
+  if(s.locked)return;
+  const m=rnd(s.cat,s.mov?s.mov.n:null);
+  if(m){ST.randDays[ST.randDay][i]={...s,mov:m,isNew:true};renderRandDay();}
+}
+function toggleLock(i){
+  const s=ST.randDays[ST.randDay][i];
+  if(s.lock)return;
+  ST.randDays[ST.randDay][i]={...s,locked:!s.locked};
+  renderRandDay();
+}
+function renderRandDay(){
+  renderRandChips();
+  const slots=ST.randDays[ST.randDay];
+  let html='<thead><tr><th style="width:36%">Movement</th><th style="width:16%">Band</th><th style="width:18%">Free weight</th><th style="width:7%;text-align:center">Sets</th><th style="width:9%;text-align:center">Reps</th><th style="width:14%">Actions</th></tr></thead><tbody>';
+  let lastSec=null;
+  slots.forEach((s,i)=>{
+    const m=s.mov;if(!m)return;
+    if(s.sec!==lastSec){if(s.sec)html+=`<tr class="sec-row"><td colspan="6">${s.sec}</td></tr>`;lastSec=s.sec||null;}
+    const badge=s.locked?`<span class="badge b-locked">locked</span>`:s.isNew?`<span class="badge b-new">new</span>`:`<span class="badge b-same">same</span>`;
+    const bc=m.bl&&m.bl!=='—'?`<span class="load-b">${m.bl}</span>`:'<span style="color:var(--mid)">—</span>';
+    let fc='';
+    if(m.f&&m.f!=='—')fc+=`<span style="font-size:11px">${m.f}</span>`;
+    if(m.fl)fc+=`${m.f&&m.f!=='—'?'<br>':''}<span class="load-f">${m.fl}</span>`;
+    if(!fc)fc='<span style="color:var(--mid)">—</span>';
+    const canSwap=!s.locked&&POOL[s.cat]&&POOL[s.cat].length>1;
+    const canLock=!s.lock;
+    html+=`<tr><td><div style="font-size:12px;font-weight:500">${m.n}</div><div style="margin-top:2px">${badge}</div></td><td>${bc}</td><td>${fc}</td><td class="num-cell">${s.sets}</td><td class="num-cell">${s.reps}</td><td><div style="display:flex;align-items:center;gap:3px">${canSwap?`<button class="swap-btn" onclick="swapOne(${i})">↺</button>`:''}${canLock?`<button class="lock-btn${s.locked?' on':''}" onclick="toggleLock(${i})" aria-label="lock">${s.locked?'🔒':'🔓'}</button>`:''}</div></td></tr>`;
+  });
+  html+='</tbody>';
+  document.getElementById('rand-table').innerHTML=html;
+}
+
+// GENERATE
+async function generateWeek(){
+  const week=document.getElementById('gen-week').value;
+  const from=document.getElementById('gen-from').value;
+  const perf=document.getElementById('gen-perf').value;
+  const notes=document.getElementById('gen-notes').value;
+  const eq=ST.eq.map(e=>e.name).join(', ');
+  const perfLabel=perf==='hit'?'Hit everything':perf==='mixed'?'Mixed — some misses':'Tough week';
+  document.getElementById('gen-result').innerHTML=`<div class="gen-output gen-loading">Generating Week ${week}...</div>`;
+  const sys=`You are a strength programming assistant. Generate a weekly workout following these rules:
+- Structure: Upper A (push) / Lower A (hinge) / Upper B (pull) / Olympic / Lower B (quad)
+- Core ONLY on upper days
+- DB bench press is primary chest press — NEVER barbell bench (no spotter)
+- Band movements always present as parallel column to free weights
+- Progression: tension OR reps, never both. RPE 8.
+- No conditioning circuits
+- Sled work: push finisher D1, harness sprint primer D2, pull finisher D3, push sprint primer D4, push+pull circuit + KB farmer's carry D5
+- Even weeks: DB RDL. Odd weeks: Barbell RDL.
+- Output as clean structured text with day headers and movement tables`;
+  const usr=`Generate Week ${week} based on Week ${from}. Performance: ${perfLabel}. ${notes?'Notes: '+notes:''} Equipment: ${eq}
+Key loads Week ${from}: DB bench 70lb×5×8, DB OHP 35lb×5×9, Deadlift 275lb×5×10, ${parseInt(week)%2===0?'DB RDL 70lb each×4×10':'Barbell RDL 205lb×4×10'}, Banded row 240lb/KB row 70lb×5×10, Lat pulldown band 150lb/Pull-up BW+5lb×5×10, Power clean 135lb×5×3, Hang clean 125lb×4×4, Push press 115lb×4×5, Front squat 145lb/band 170lb×4×10, Back squat 185lb/band 170lb×4×10, KB farmer's carry 53lb each×3×40yd.`;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:[{role:'user',content:usr}]})});
+    const d=await r.json();
+    const txt=d.content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    document.getElementById('gen-result').innerHTML=`<div class="gen-output">${txt}</div>`;
+  }catch(e){document.getElementById('gen-result').innerHTML=`<div class="gen-output gen-loading">Failed. Check connection.</div>`;}
+}
+function clearGen(){document.getElementById('gen-result').innerHTML='';document.getElementById('gen-notes').value='';}
+
+// PERSIST
+function saveState(){
+  try{localStorage.setItem('wt_logs',JSON.stringify(ST.logs));localStorage.setItem('wt_eq',JSON.stringify(ST.eq));}catch(e){}
+}
+function loadState(){
+  try{
+    const logs=localStorage.getItem('wt_logs');
+    const eq=localStorage.getItem('wt_eq');
+    if(logs)ST.logs=JSON.parse(logs);
+    if(eq)ST.eq=JSON.parse(eq);
+    if(ST.logs.length)ST.week=Math.max(...ST.logs.map(l=>l.week));
+  }catch(e){}
+}
+
+// INIT
+loadState();
+document.getElementById('m-week').textContent=ST.week;
+document.getElementById('m-sessions').textContent=ST.logs.length;
+document.getElementById('wk-num').textContent=ST.week;
+document.getElementById('log-week').value=ST.week;
+document.getElementById('gen-week').value=ST.week+1;
+document.getElementById('gen-from').value=ST.week;
+renderProgChips();
+renderProgDay(0);
+renderRandChips();
+renderRandDay();
+</script>
+</body>
+</html>
