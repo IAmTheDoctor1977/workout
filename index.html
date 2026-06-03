@@ -770,6 +770,16 @@ function renderRandDay(){
 }
 
 // GENERATE
+function buildLogContext(){
+  // Pull last 10 logs, format them as readable context for the AI
+  if(!ST.logs||!ST.logs.length)return'No prior session logs available.';
+  const recent=ST.logs.slice(0,10);
+  return recent.map(l=>{
+    const res=l.result==='hit'?'Hit everything':l.result==='mixed'?'Mixed — some misses':'Tough week — held loads';
+    return`Week ${l.week} | ${l.day} | ${res}${l.notes?' | Notes: '+l.notes:''}`;
+  }).join('\n');
+}
+
 async function generateWeek(){
   const week=document.getElementById('gen-week').value;
   const from=document.getElementById('gen-from').value;
@@ -777,7 +787,10 @@ async function generateWeek(){
   const notes=document.getElementById('gen-notes').value;
   const eq=ST.eq.map(e=>e.name).join(', ');
   const perfLabel=perf==='hit'?'Hit everything':perf==='mixed'?'Mixed — some misses':'Tough week';
-  document.getElementById('gen-result').innerHTML=`<div class="gen-output gen-loading">Generating Week ${week}...</div>`;
+  const logContext=buildLogContext();
+
+  document.getElementById('gen-result').innerHTML=`<div class="gen-output gen-loading">Reading your logs and generating Week ${week}...</div>`;
+
   const sys=`You are a strength programming assistant. Generate a weekly workout following these rules:
 - Structure: Upper A (push) / Lower A (hinge) / Upper B (pull) / Olympic / Lower B (quad)
 - Core ONLY on upper days
@@ -787,15 +800,41 @@ async function generateWeek(){
 - No conditioning circuits
 - Sled work: push finisher D1, harness sprint primer D2, pull finisher D3, push sprint primer D4, push+pull circuit + KB farmer's carry D5
 - Even weeks: DB RDL. Odd weeks: Barbell RDL.
-- Output as clean structured text with day headers and movement tables`;
-  const usr=`Generate Week ${week} based on Week ${from}. Performance: ${perfLabel}. ${notes?'Notes: '+notes:''} Equipment: ${eq}
-Key loads Week ${from}: DB bench 70lb×5×8, DB OHP 35lb×5×9, Deadlift 275lb×5×10, ${parseInt(week)%2===0?'DB RDL 70lb each×4×10':'Barbell RDL 205lb×4×10'}, Banded row 240lb/KB row 70lb×5×10, Lat pulldown band 150lb/Pull-up BW+5lb×5×10, Power clean 135lb×5×3, Hang clean 125lb×4×4, Push press 115lb×4×5, Front squat 145lb/band 170lb×4×10, Back squat 185lb/band 170lb×4×10, KB farmer's carry 53lb each×3×40yd.`;
+- If session logs show repeated failures on a movement, hold that load and note it.
+- If session logs show consistent hits across multiple weeks, progress that movement.
+- Output as clean structured text with day headers and movement tables.`;
+
+  const usr=`Generate Week ${week} based on Week ${from}.
+Overall performance this week: ${perfLabel}.
+${notes?'Additional notes: '+notes:''}
+
+RECENT SESSION LOGS (use these to inform progression decisions):
+${logContext}
+
+Equipment: ${eq}
+
+Baseline loads from Week 17 (adjust up or down based on logs above):
+- DB bench press: 70lb × 5×8 (primary chest — no barbell bench)
+- DB shoulder press: 35lb × 5×9
+- Barbell deadlift: 275lb × 5×10
+- ${parseInt(week)%2===0?'DB RDL 70lb each × 4×10 (even week)':'Barbell RDL 205lb × 4×10 (odd week)'}
+- Banded row: 240lb / KB single-arm row: 70lb × 5×10
+- Lat pulldown band: 150lb / Pull-up BW+5lb × 5×10
+- Power clean: 135lb × 5×3
+- Hang clean: 125lb × 4×4
+- Push press: 115lb × 4×5
+- Barbell front squat: 145lb / band: 170lb × 4×10
+- Barbell back squat: 185lb / band: 170lb × 4×10
+- KB farmer's carry: 53lb each × 3×40yd
+
+Reason through the logs before setting loads. If a movement failed recently, hold or reduce. If it has been hit cleanly for 2+ weeks, progress it.`;
+
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:[{role:'user',content:usr}]})});
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,system:sys,messages:[{role:'user',content:usr}]})});
     const d=await r.json();
     const txt=d.content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
     document.getElementById('gen-result').innerHTML=`<div class="gen-output">${txt}</div>`;
-  }catch(e){document.getElementById('gen-result').innerHTML=`<div class="gen-output gen-loading">Failed. Check connection.</div>`;}
+  }catch(e){document.getElementById('gen-result').innerHTML=`<div class="gen-output gen-loading">Failed. Check connection and try again.</div>`;}
 }
 function clearGen(){document.getElementById('gen-result').innerHTML='';document.getElementById('gen-notes').value='';}
 
