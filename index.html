@@ -639,6 +639,7 @@ function buildRandDay(tmpl){
 
 let ST = {
   week:17, progDay:0, randDay:0,
+  program: JSON.parse(JSON.stringify(W17)),
   logs:[...SEED_LOGS],
   eq:[...DEFAULT_EQ],
   randDays: DAY_TEMPLATES.map(d=>buildRandDay(d))
@@ -658,11 +659,11 @@ function showScreen(id,btn){
 // PROGRAM
 function renderProgChips(){
   const el=document.getElementById('prog-day-chips');
-  el.innerHTML=W17.map((d,i)=>`<div class="day-chip${i===ST.progDay?' active':''}" onclick="setProgDay(${i})">${d.label.split('—')[0].trim()}</div>`).join('');
+  el.innerHTML=ST.program.map((d,i)=>`<div class="day-chip${i===ST.progDay?' active':''}" onclick="setProgDay(${i})">${d.label.split('—')[0].trim()}</div>`).join('');
 }
 function setProgDay(i){ST.progDay=i;renderProgChips();renderProgDay(i);}
 function renderProgDay(i){
-  const day=W17[i];
+  const day=ST.program[i];
   document.getElementById('prog-warmup').textContent=day.warmup;
   let html='<thead><tr><th style="width:38%">Movement</th><th style="width:17%">Band</th><th style="width:18%">Free weight</th><th style="width:8%;text-align:center">Sets</th><th style="width:19%;text-align:center">Reps</th></tr></thead><tbody>';
   let lastSec=null;
@@ -770,85 +771,240 @@ function renderRandDay(){
 }
 
 // GENERATE
-function buildLogContext(){
-  // Pull last 10 logs, format them as readable context for the AI
-  if(!ST.logs||!ST.logs.length)return'No prior session logs available.';
-  const recent=ST.logs.slice(0,10);
-  return recent.map(l=>{
-    const res=l.result==='hit'?'Hit everything':l.result==='mixed'?'Mixed — some misses':'Tough week — held loads';
-    return`Week ${l.week} | ${l.day} | ${res}${l.notes?' | Notes: '+l.notes:''}`;
-  }).join('\n');
+// LOCAL RULES-BASED GENERATOR
+function parseLoadStr(str){
+  // Returns {num, unit, suffix, repsInline} or null if not parseable as a number
+  if(!str || str==='—') return null;
+  // Match patterns like "210 lb", "70 lb each", "210 lb × 23", "55 lb × 14", "BW × 30"
+  const m = str.match(/^(\d+)\s*lb(\s*each)?(\s*×\s*(\d+))?/i);
+  if(!m) return null;
+  return { num: parseInt(m[1]), each: !!m[2], inlineReps: m[4] ? parseInt(m[4]) : null, raw: str };
 }
 
-async function generateWeek(){
+function rebuildLoadStr(parsed, newNum, newInlineReps){
+  let out = newNum + ' lb';
+  if(parsed.each) out += ' each';
+  if(newInlineReps !== null && newInlineReps !== undefined) out += ' × ' + newInlineReps;
+  return out;
+}
+
+function parseRepsStr(str){
+  // Match simple integer rep counts like "8", "21", "10/side", "19/leg"
+  if(!str) return null;
+  const m = str.match(/^(\d+)(.*)$/);
+  if(!m) return null;
+  return { num: parseInt(m[1]), suffix: m[2] || '' };
+}
+
+// Tension increment table — whole-number jumps appropriate to load magnitude
+function tensionIncrement(num, isPrimary){
+  if(num >= 200) return 10;
+  if(num >= 100) return isPrimary ? 10 : 5;
+  if(num >= 40) return 5;
+  if(num >= 20) return isPrimary ? 5 : 5;
+  return 5; // keep all increments whole numbers (avoids fractional DB/band sizes)
+}
+
+function repIncrement(){ return 1; }
+
+// Movements that should never auto-progress via the local generator
+const NO_PROGRESS_KEYWORDS = ['sled','core rotation','dead bug','hollow body','farmer','pallof','side rotation'];
+function isNonProgressing(name){
+  const n = name.toLowerCase();
+  return NO_PROGRESS_KEYWORDS.some(k => n.includes(k));
+}
+
+// Movement classification — primaries get tension priority, accessories get rep priority
+const PRIMARY_KEYWORDS = ['chest press','bench press','deadlift','squat','row','pulldown','pull-up','shoulder press','clean','push press','snatch'];
+function isPrimaryMove(name){
+  const n = name.toLowerCase();
+  return PRIMARY_KEYWORDS.some(k => n.includes(k));
+}
+
+// Synonyms to help match notes (e.g. "OHP" -> shoulder press, "DL" -> deadlift)
+const NAME_SYNONYMS = {
+  'shoulder press': ['ohp','overhead press','military press'],
+  'banded chest press': ['bench','chest press','db bench'],
+  'banded deadlift': ['deadlift','dl'],
+  'banded row': ['row'],
+  'lat pulldown': ['pulldown','pull-up','pullup'],
+};
+
+// Decide per-movement action based on overall perf + any specific note mentioning this movement
+function decideAction(moveName, perf, notes){
+  const lowerNotes = (notes||'').toLowerCase();
+  const lowerName = moveName.toLowerCase();
+  const nameWords = lowerName.split(/[\s\/]+/).filter(w=>w.length>3);
+  let mentioned = nameWords.some(w => lowerNotes.includes(w));
+  if(!mentioned && NAME_SYNONYMS[lowerName]){
+    mentioned = NAME_SYNONYMS[lowerName].some(syn => lowerNotes.includes(syn));
+  }
+  const failureMentioned = mentioned && /(fail|miss|couldn't|could not|short|below)/.test(lowerNotes);
+  const successMentioned = mentioned && /(hit|clean|easy|all reps)/.test(lowerNotes);
+
+  if(failureMentioned) return 'hold';
+  if(successMentioned) return perf==='tough' ? 'hold' : 'progress';
+
+  // fall back to overall performance
+  if(perf==='tough') return 'hold';
+  if(perf==='mixed') return isPrimaryMove(moveName) ? 'progress' : 'hold';
+  return 'progress'; // hit everything
+}
+
+function progressLoadField(loadStr, isPrimary, action){
+  const parsed = parseLoadStr(loadStr);
+  if(!parsed) return loadStr; // BW, —, non-numeric — leave as-is
+  if(action==='hold') return loadStr;
+
+  // tension OR reps, never both — alternate priority based on whether there's an inline rep count
+  if(parsed.inlineReps !== null){
+    // has its own rep target — bump reps, hold tension (unless primary, then bump tension and reset reps down slightly isn't needed here since reps live in reps column for primaries)
+    if(isPrimary){
+      const inc = tensionIncrement(parsed.num, true);
+      return rebuildLoadStr(parsed, parsed.num + inc, parsed.inlineReps);
+    } else {
+      return rebuildLoadStr(parsed, parsed.num, parsed.inlineReps + repIncrement());
+    }
+  } else {
+    if(isPrimary){
+      const inc = tensionIncrement(parsed.num, true);
+      return rebuildLoadStr(parsed, parsed.num + inc, null);
+    } else {
+      // accessory with no inline reps — bump tension by smaller increment
+      const inc = tensionIncrement(parsed.num, false);
+      return rebuildLoadStr(parsed, parsed.num + inc, null);
+    }
+  }
+}
+
+function progressRepsField(repsStr, isPrimary, action){
+  if(action==='hold') return repsStr;
+  if(repsStr === 'see loads') return repsStr; // handled via inline load reps instead
+  // Don't progress unit-based reps (sled yards, time holds) — only plain rep counts
+  if(/yd|s$|sec/i.test(repsStr)) return repsStr;
+  // handle multi-value reps like "30 / 22" or "19/leg / 16/leg" — bump each numeric token
+  if(repsStr.includes('/') && repsStr.split(' ').length > 1 && /\d+\s*\/\s*\d+/.test(repsStr)){
+    return repsStr.replace(/(\d+)(\/?\w*)/g, (full, num, suf) => {
+      if(isPrimary) return full; // primaries progress via load not reps here
+      return (parseInt(num)+1) + suf;
+    });
+  }
+  const parsed = parseRepsStr(repsStr);
+  if(!parsed) return repsStr;
+  if(isPrimary) return repsStr; // primaries progress via load
+  return (parsed.num + repIncrement()) + parsed.suffix;
+}
+
+function generateLocalWeek(targetWeek, fromWeek, perf, notes){
+  // Deep clone current program as the base
+  const base = JSON.parse(JSON.stringify(ST.program || W17));
+  const isEvenWeek = parseInt(targetWeek) % 2 === 0;
+
+  base.forEach(day => {
+    day.moves.forEach(m => {
+      if(isNonProgressing(m.n)) return; // sled, core stability holds, carries — left as-is
+
+      const isPrimary = isPrimaryMove(m.n);
+      const action = decideAction(m.n, perf, notes);
+
+      // Band-side progression
+      if(m.b) m.b = progressLoadField(m.b, isPrimary, action);
+      // Free-weight-side progression
+      if(m.fl) m.fl = progressLoadField(m.fl, isPrimary, action);
+      else if(m.f && parseLoadStr(m.f)) m.f = progressLoadField(m.f, isPrimary, action);
+
+      // Reps progression (skip "see loads" and unit-based reps — handled elsewhere)
+      if(m.reps && m.reps !== 'see loads'){
+        m.reps = progressRepsField(m.reps, isPrimary, action);
+      }
+    });
+  });
+
+  // Even/odd week RDL swap (Day 2 — Romanian Deadlift / Barbell RDL / DB RDL)
+  const lowerA = base[1];
+  if(lowerA){
+    const rdlMove = lowerA.moves.find(m => /rdl|romanian/i.test(m.n) || /rdl/i.test(m.f||''));
+    if(rdlMove){
+      if(isEvenWeek && !/db rdl/i.test(rdlMove.f)){
+        rdlMove.f = 'DB RDL';
+        rdlMove.fl = '70 lb each';
+      } else if(!isEvenWeek && /db rdl/i.test(rdlMove.f)){
+        rdlMove.f = 'Barbell RDL';
+        const bandParsed = parseLoadStr(rdlMove.b);
+        rdlMove.fl = bandParsed ? (bandParsed.num + 15) + ' lb' : '205 lb';
+      }
+    }
+  }
+
+  return base;
+}
+
+function buildChangeSummary(oldProg, newProg, perf, notes){
+  const lines = [];
+  const perfLabel = perf==='hit'?'Hit everything — progressing across the board':perf==='mixed'?'Mixed week — primaries progressed, accessories held':'Tough week — most loads held';
+  lines.push(perfLabel);
+  if(notes && notes.trim()) lines.push('Notes considered: ' + notes.trim());
+  lines.push('');
+  oldProg.forEach((day, di) => {
+    const changes = [];
+    day.moves.forEach((m, mi) => {
+      const newM = newProg[di].moves[mi];
+      const diffs = [];
+      if(m.b !== newM.b) diffs.push(`band ${m.b} → ${newM.b}`);
+      if(m.fl !== newM.fl) diffs.push(`FW ${m.fl||m.f} → ${newM.fl||newM.f}`);
+      else if(m.f !== newM.f) diffs.push(`FW ${m.f} → ${newM.f}`);
+      if(m.reps !== newM.reps) diffs.push(`reps ${m.reps} → ${newM.reps}`);
+      if(diffs.length) changes.push(`  • ${newM.n}: ${diffs.join(', ')}`);
+    });
+    if(changes.length){
+      lines.push(`${day.label}:`);
+      lines.push(...changes);
+      lines.push('');
+    }
+  });
+  if(lines.length <= 3) lines.push('No numeric changes — all loads/reps held or non-numeric (sled, BW, Olympic barbell).');
+  return lines.join('\n');
+}
+
+function generateWeek(){
   const week=document.getElementById('gen-week').value;
   const from=document.getElementById('gen-from').value;
   const perf=document.getElementById('gen-perf').value;
   const notes=document.getElementById('gen-notes').value;
-  const eq=ST.eq.map(e=>e.name).join(', ');
-  const perfLabel=perf==='hit'?'Hit everything':perf==='mixed'?'Mixed — some misses':'Tough week';
-  const logContext=buildLogContext();
 
-  document.getElementById('gen-result').innerHTML=`<div class="gen-output gen-loading">Reading your logs and generating Week ${week}...</div>`;
+  document.getElementById('gen-result').innerHTML=`<div class="gen-output gen-loading">Generating Week ${week}...</div>`;
 
-  const sys=`You are a strength programming assistant. Generate a weekly workout following these rules:
-- Structure: Upper A (push) / Lower A (hinge) / Upper B (pull) / Olympic / Lower B (quad)
-- Core ONLY on upper days
-- DB bench press is primary chest press — NEVER barbell bench (no spotter)
-- Band movements always present as parallel column to free weights
-- Progression: tension OR reps, never both. RPE 8.
-- No conditioning circuits
-- Sled work: push finisher D1, harness sprint primer D2, pull finisher D3, push sprint primer D4, push+pull circuit + KB farmer's carry D5
-- Even weeks: DB RDL. Odd weeks: Barbell RDL.
-- If session logs show repeated failures on a movement, hold that load and note it.
-- If session logs show consistent hits across multiple weeks, progress that movement.
-- Output as clean structured text with day headers and movement tables.`;
+  const oldProg = JSON.parse(JSON.stringify(ST.program || W17));
+  const newProg = generateLocalWeek(week, from, perf, notes);
+  const summary = buildChangeSummary(oldProg, newProg, perf, notes);
 
-  const usr=`Generate Week ${week} based on Week ${from}.
-Overall performance this week: ${perfLabel}.
-${notes?'Additional notes: '+notes:''}
+  // Apply to state and re-render program tab
+  ST.program = newProg;
+  ST.week = parseInt(week);
+  saveState();
+  document.getElementById('m-week').textContent = ST.week;
+  document.getElementById('wk-num').textContent = ST.week;
+  renderProgDay(ST.progDay);
 
-RECENT SESSION LOGS (use these to inform progression decisions):
-${logContext}
-
-Equipment: ${eq}
-
-Baseline loads from Week 17 (adjust up or down based on logs above):
-- DB bench press: 70lb × 5×8 (primary chest — no barbell bench)
-- DB shoulder press: 35lb × 5×9
-- Barbell deadlift: 275lb × 5×10
-- ${parseInt(week)%2===0?'DB RDL 70lb each × 4×10 (even week)':'Barbell RDL 205lb × 4×10 (odd week)'}
-- Banded row: 240lb / KB single-arm row: 70lb × 5×10
-- Lat pulldown band: 150lb / Pull-up BW+5lb × 5×10
-- Power clean: 135lb × 5×3
-- Hang clean: 125lb × 4×4
-- Push press: 115lb × 4×5
-- Barbell front squat: 145lb / band: 170lb × 4×10
-- Barbell back squat: 185lb / band: 170lb × 4×10
-- KB farmer's carry: 53lb each × 3×40yd
-
-Reason through the logs before setting loads. If a movement failed recently, hold or reduce. If it has been hit cleanly for 2+ weeks, progress it.`;
-
-  try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,system:sys,messages:[{role:'user',content:usr}]})});
-    const d=await r.json();
-    const txt=d.content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
-    document.getElementById('gen-result').innerHTML=`<div class="gen-output">${txt}</div>`;
-  }catch(e){document.getElementById('gen-result').innerHTML=`<div class="gen-output gen-loading">Failed. Check connection and try again.</div>`;}
+  document.getElementById('gen-result').innerHTML=`<div class="gen-output">Week ${week} generated and applied to Program tab.\n\n${summary}</div>`;
 }
 function clearGen(){document.getElementById('gen-result').innerHTML='';document.getElementById('gen-notes').value='';}
 
 // PERSIST
 function saveState(){
-  try{localStorage.setItem('wt_logs',JSON.stringify(ST.logs));localStorage.setItem('wt_eq',JSON.stringify(ST.eq));}catch(e){}
+  try{localStorage.setItem('wt_logs',JSON.stringify(ST.logs));localStorage.setItem('wt_eq',JSON.stringify(ST.eq));localStorage.setItem('wt_program',JSON.stringify(ST.program));localStorage.setItem('wt_week',String(ST.week));}catch(e){}
 }
 function loadState(){
   try{
     const logs=localStorage.getItem('wt_logs');
     const eq=localStorage.getItem('wt_eq');
+    const program=localStorage.getItem('wt_program');
+    const week=localStorage.getItem('wt_week');
     if(logs)ST.logs=JSON.parse(logs);
     if(eq)ST.eq=JSON.parse(eq);
-    if(ST.logs.length)ST.week=Math.max(...ST.logs.map(l=>l.week));
+    if(program)ST.program=JSON.parse(program);
+    if(week)ST.week=parseInt(week);
+    else if(ST.logs.length)ST.week=Math.max(...ST.logs.map(l=>l.week));
   }catch(e){}
 }
 
