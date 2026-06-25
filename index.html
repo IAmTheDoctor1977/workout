@@ -227,8 +227,8 @@ textarea { min-height: 80px; resize: vertical; }
       <div class="screen-header"><div class="screen-title">GENERATE <span>WEEK</span></div></div>
       <div class="card">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div class="form-group" style="margin:0"><label class="form-label">Generating week</label><input type="number" id="gen-week" value="18" min="1"></div>
-          <div class="form-group" style="margin:0"><label class="form-label">Based on week</label><input type="number" id="gen-from" value="17" min="1"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Generating week</label><input type="number" id="gen-week" value="20" min="1"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Based on week</label><input type="number" id="gen-from" value="19" min="1"></div>
         </div>
         <div class="form-group" style="margin-top:10px"><label class="form-label">Performance last week</label>
           <select id="gen-perf">
@@ -237,11 +237,20 @@ textarea { min-height: 80px; resize: vertical; }
             <option value="tough">Tough week — hold most loads</option>
           </select>
         </div>
-        <div class="form-group"><label class="form-label">Notes (missed lifts, equipment changes)</label>
-          <textarea id="gen-notes" placeholder="e.g. Bench failed set 5. Added 25lb DBs..."></textarea>
+        <div class="form-group"><label class="form-label">Notes — describe what happened (e.g. "bench failed set 4", "OHP felt easy")</label>
+          <textarea id="gen-notes" placeholder="e.g. Bench stalled on set 4. OHP hit all reps easily. Deadlift felt heavy..."></textarea>
         </div>
         <div class="btn-row"><button class="btn btn-primary" onclick="generateWeek()">Generate ↗</button><button class="btn btn-ghost" onclick="clearGen()">Clear</button></div>
         <div id="gen-result"></div>
+      </div>
+      <div class="section-divider">Reset to checkpoint</div>
+      <div class="card">
+        <p style="font-size:12px;color:var(--mid);margin-bottom:10px;">Roll back the program to a known-good week. This resets loads in the Program tab — your log history is preserved.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div><label class="form-label">Reset to week</label><input type="number" id="reset-week" value="19" min="1"></div>
+          <div style="display:flex;align-items:flex-end;"><button class="btn btn-ghost" style="width:100%" onclick="resetToCheckpoint()">Reset ↺</button></div>
+        </div>
+        <div id="reset-result" style="font-size:12px;color:var(--mid);margin-top:4px;font-family:var(--font-mono);"></div>
       </div>
     </div>
 
@@ -295,63 +304,68 @@ textarea { min-height: 80px; resize: vertical; }
 </div>
 
 <script>
-const W17 = [
-  { label:'Upper A — Push', type:'upper',
-    warmup:'2 min cardio · Arm circles 30s each · Band pull-apart 2×15 · Wall slide 2×10 · Push-up 2×10 slow · DB ramp-up: 50% ×5 → 75% ×3',
-    moves:[
-      {n:'Banded chest press',b:'210 lb',f:'DB bench press',fl:'70 lb each',sets:5,reps:'8'},
-      {n:'Shoulder press',b:'110 lb',f:'DB shoulder press',fl:'35 lb each',sets:5,reps:'9'},
-      {n:'Chest fly',b:'50 lb × 23',f:'DB fly',fl:'25 lb each × 16',sets:4,reps:'see loads'},
-      {n:'Lateral raise',b:'20 lb',f:'DB lateral raise',fl:'15 lb each',sets:4,reps:'21'},
-      {n:'Tricep overhead ext',b:'100 lb × 18',f:'Barbell overhead ext',fl:'55 lb × 14',sets:3,reps:'see loads'},
-      {n:'Side core rotation',b:'70 lb',f:'Side core rotation',fl:'70 lb',sets:3,reps:'10/side',sec:'Core'},
-      {n:'Sled push',b:'—',f:'3 × 20 yd moderate',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
-    ]},
-  { label:'Lower A — Hinge', type:'lower',
-    warmup:'2 min cardio · Hip circles 30s each · 90/90 hip switch 10 each · World\'s greatest stretch 5 each · Leg swings · Glute bridge 2×15 · Banded good morning 2×10 · BW RDL 2×8 · Bar ramp-up → 90% ×1',
-    moves:[
-      {n:'Sled harness sprint',b:'—',f:'4 × 15 yd light',fl:'',sets:4,reps:'15 yd',sec:'Sled primer'},
-      {n:'Banded deadlift',b:'300 lb',f:'Barbell deadlift',fl:'275 lb',sets:5,reps:'10'},
-      {n:'Romanian deadlift',b:'190 lb',f:'Barbell RDL',fl:'205 lb',sets:4,reps:'10'},
-      {n:'Hamstring curl',b:'70 lb',f:'Banded leg curl',fl:'70 lb',sets:3,reps:'17'},
-      {n:'Hip thrusts / KB swing',b:'BW × 30',f:'KB swing',fl:'53 lb',sets:4,reps:'30 / 22'},
-    ]},
-  { label:'Upper B — Pull', type:'upper',
-    warmup:'2 min cardio · Band pull-apart 2×15 · Face pull light band 2×15 · Scapular pull-up 2×8 · Prone Y-T-W 1×8 · Dead hang 2×20–30s',
-    moves:[
-      {n:'Lat pulldown',b:'150 lb',f:'Pull-up',fl:'BW +5 lb',sets:5,reps:'10'},
-      {n:'Banded row',b:'240 lb',f:'KB single-arm row',fl:'70 lb each',sets:5,reps:'10'},
-      {n:'Face pull',b:'50 lb',f:'Banded face pull',fl:'50 lb',sets:4,reps:'23'},
-      {n:'Rear delt fly',b:'20 lb × 21',f:'DB rear delt fly',fl:'15 lb each × 17',sets:3,reps:'see loads'},
-      {n:'Strict bicep curl',b:'100 lb × 18',f:'Barbell curl',fl:'55 lb × 14',sets:3,reps:'see loads'},
-      {n:'Incline curl',b:'90 lb',f:'DB incline curl',fl:'25 lb each',sets:4,reps:'19 / 18'},
-      {n:'Dead bug',b:'BW',f:'Dead bug',fl:'5 lb hold',sets:3,reps:'10/side',sec:'Core'},
-      {n:'Sled pull',b:'—',f:'3 × 20 yd rope/harness',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
-    ]},
-  { label:'Olympic Day', type:'olympic',
-    warmup:'3 min cardio · Hip circles · World\'s greatest stretch 5 each · OH squat PVC 2×10 · Muscle clean empty bar 2×5 · Hang clean empty bar 3×3 · Power clean 50% 3×2',
-    moves:[
-      {n:'Sled push sprint',b:'—',f:'Explosive — light load',fl:'4 × 10 yd',sets:4,reps:'10 yd',sec:'Sled primer'},
-      {n:'Power clean',b:'—',f:'Barbell',fl:'135 lb',sets:5,reps:'3'},
-      {n:'Hang clean',b:'—',f:'Barbell',fl:'125 lb',sets:4,reps:'4'},
-      {n:'Push press',b:'—',f:'Barbell',fl:'115 lb',sets:4,reps:'5'},
-      {n:'Snatch-grip deadlift',b:'—',f:'Barbell',fl:'195 lb',sets:3,reps:'5'},
-      {n:'Barbell good morning',b:'—',f:'Barbell',fl:'90 lb',sets:3,reps:'10'},
-      {n:'KB complex',b:'—',f:'Swing+clean+press',fl:'40 lb',sets:3,reps:'5+5+5'},
-      {n:'Hollow body hold',b:'—',f:'BW',fl:'BW',sets:3,reps:'50s',sec:'Core'},
-    ]},
-  { label:'Lower B — Quad', type:'lower',
-    warmup:'2 min cardio · Leg swings · Walking lunge BW 2×10 · Goblet squat light KB 2×10 · Box step-up BW 2×8 each · Bar ramp-up front + back squat',
-    moves:[
-      {n:'Front squat',b:'170 lb',f:'Barbell front squat',fl:'145 lb',sets:4,reps:'10'},
-      {n:'Back squat',b:'170 lb',f:'Barbell back squat',fl:'185 lb',sets:4,reps:'10'},
-      {n:'Quad extension / step-up',b:'90 lb',f:'DB step-up',fl:'25 lb each',sets:4,reps:'19'},
-      {n:'Reverse lunge',b:'BW × 19/leg',f:'KB reverse lunge',fl:'35 lb each × 16/leg',sets:4,reps:'see loads'},
-      {n:'Calf raises',b:'BW × 37',f:'Standing calf raise',fl:'45 lb plate × 35',sets:4,reps:'see loads'},
-      {n:'Sled push + pull circuit',b:'—',f:'3 rounds 20 yd push → pull',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
-      {n:"KB farmer's carry",b:'—',f:'KB',fl:'53 lb each',sets:3,reps:'40 yd',sec:'Carry'},
-    ]},
-];
+// CHECKPOINTS — named baseline weeks to reset to
+const CHECKPOINTS = {
+  19: [
+    { label:'Upper A — Push', type:'upper',
+      warmup:'2 min cardio · Arm circles 30s each · Band pull-apart 2×15 · Wall slide 2×10 · Push-up 2×10 slow · DB ramp-up: 50% ×5 → 75% ×3',
+      moves:[
+        {n:'Banded chest press',b:'220 lb',f:'DB bench press',fl:'75 lb each',sets:5,reps:'8'},
+        {n:'Shoulder press',b:'115 lb',f:'DB shoulder press',fl:'40 lb each',sets:5,reps:'8'},
+        {n:'Chest fly',b:'55 lb',f:'DB fly',fl:'25 lb each',sets:4,reps:'16'},
+        {n:'Lateral raise',b:'25 lb',f:'DB lateral raise',fl:'20 lb each',sets:4,reps:'22'},
+        {n:'Tricep overhead ext',b:'105 lb',f:'Barbell overhead ext',fl:'60 lb',sets:3,reps:'12'},
+        {n:'Side core rotation',b:'70 lb',f:'Side core rotation',fl:'70 lb',sets:3,reps:'10/side',sec:'Core'},
+        {n:'Sled push',b:'—',f:'3 × 20 yd moderate',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
+      ]},
+    { label:'Lower A — Hinge', type:'lower',
+      warmup:'2 min cardio · Hip circles 30s each · 90/90 hip switch 10 each · World\'s greatest stretch 5 each · Leg swings · Glute bridge 2×15 · Banded good morning 2×10 · BW RDL 2×8 · Bar ramp-up → 90% ×1',
+      moves:[
+        {n:'Sled harness sprint',b:'—',f:'4 × 15 yd light',fl:'',sets:4,reps:'15 yd',sec:'Sled primer'},
+        {n:'Banded deadlift',b:'305 lb',f:'Barbell deadlift',fl:'280 lb',sets:5,reps:'10'},
+        {n:'Romanian deadlift',b:'195 lb',f:'Barbell RDL',fl:'210 lb',sets:4,reps:'10'},
+        {n:'Hamstring curl',b:'70 lb',f:'Banded leg curl',fl:'70 lb',sets:3,reps:'18'},
+        {n:'Hip thrusts / KB swing',b:'BW × 32',f:'KB swing',fl:'53 lb × 24',sets:4,reps:'see loads'},
+      ]},
+    { label:'Upper B — Pull', type:'upper',
+      warmup:'2 min cardio · Band pull-apart 2×15 · Face pull light band 2×15 · Scapular pull-up 2×8 · Prone Y-T-W 1×8 · Dead hang 2×20–30s',
+      moves:[
+        {n:'Lat pulldown',b:'155 lb',f:'Pull-up',fl:'BW +5 lb',sets:5,reps:'10'},
+        {n:'Banded row',b:'245 lb',f:'KB single-arm row',fl:'70 lb each',sets:5,reps:'10'},
+        {n:'Face pull',b:'55 lb',f:'Banded face pull',fl:'55 lb',sets:4,reps:'22'},
+        {n:'Rear delt fly',b:'20 lb',f:'DB rear delt fly',fl:'15 lb each',sets:3,reps:'20'},
+        {n:'Strict bicep curl',b:'105 lb',f:'Barbell curl',fl:'60 lb',sets:3,reps:'14'},
+        {n:'Incline curl',b:'95 lb',f:'DB incline curl',fl:'25 lb each',sets:4,reps:'19'},
+        {n:'Dead bug',b:'BW',f:'Dead bug',fl:'5 lb hold',sets:3,reps:'10/side',sec:'Core'},
+        {n:'Sled pull',b:'—',f:'3 × 20 yd rope/harness',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
+      ]},
+    { label:'Olympic Day', type:'olympic',
+      warmup:'3 min cardio · Hip circles · World\'s greatest stretch 5 each · OH squat PVC 2×10 · Muscle clean empty bar 2×5 · Hang clean empty bar 3×3 · Power clean 50% 3×2',
+      moves:[
+        {n:'Sled push sprint',b:'—',f:'Explosive — light load',fl:'4 × 10 yd',sets:4,reps:'10 yd',sec:'Sled primer'},
+        {n:'Power clean',b:'—',f:'Barbell',fl:'140 lb',sets:5,reps:'3'},
+        {n:'Hang clean',b:'—',f:'Barbell',fl:'130 lb',sets:4,reps:'4'},
+        {n:'Push press',b:'—',f:'Barbell',fl:'120 lb',sets:4,reps:'5'},
+        {n:'Snatch-grip deadlift',b:'—',f:'Barbell',fl:'200 lb',sets:3,reps:'5'},
+        {n:'Barbell good morning',b:'—',f:'Barbell',fl:'95 lb',sets:3,reps:'10'},
+        {n:'KB complex',b:'—',f:'Swing+clean+press',fl:'40 lb',sets:3,reps:'5+5+5'},
+        {n:'Hollow body hold',b:'—',f:'BW',fl:'BW',sets:3,reps:'50s',sec:'Core'},
+      ]},
+    { label:'Lower B — Quad', type:'lower',
+      warmup:'2 min cardio · Leg swings · Walking lunge BW 2×10 · Goblet squat light KB 2×10 · Box step-up BW 2×8 each · Bar ramp-up front + back squat',
+      moves:[
+        {n:'Sled push + pull circuit',b:'—',f:'3 rounds 20 yd push → pull',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
+        {n:'Front squat',b:'175 lb',f:'Barbell front squat',fl:'150 lb',sets:4,reps:'10'},
+        {n:'Back squat',b:'175 lb',f:'Barbell back squat',fl:'190 lb',sets:4,reps:'10'},
+        {n:'Quad extension / step-up',b:'95 lb',f:'DB step-up',fl:'30 lb each',sets:4,reps:'19'},
+        {n:'Reverse lunge',b:'BW × 20/leg',f:'KB reverse lunge',fl:'35 lb each × 17/leg',sets:4,reps:'see loads'},
+        {n:'Calf raises',b:'BW × 38',f:'Standing calf raise',fl:'45 lb plate × 36',sets:4,reps:'see loads'},
+        {n:"KB farmer's carry",b:'—',f:'Farmer carry bars',fl:'53 lb each',sets:3,reps:'40 yd',sec:'Carry'},
+      ]},
+  ]
+};
+// Current baseline is W19
+const W17 = CHECKPOINTS[19];
 
 const SEED_LOGS = [
   {week:10,day:'Day 1 — Upper A (Push)',result:'mixed',notes:'Chest press reduced to 210 lb 5×10. Shoulder press failed set 4 and 5 at 7 reps (110 lb).',date:'Week 10'},
@@ -638,7 +652,7 @@ function buildRandDay(tmpl){
 }
 
 let ST = {
-  week:17, progDay:0, randDay:0,
+  week:19, progDay:0, randDay:0,
   program: JSON.parse(JSON.stringify(W17)),
   logs:[...SEED_LOGS],
   eq:[...DEFAULT_EQ],
@@ -831,7 +845,20 @@ const NAME_SYNONYMS = {
 };
 
 // Decide per-movement action based on overall perf + any specific note mentioning this movement
-function decideAction(moveName, perf, notes){
+function decideAction(moveName, perf, notes, parsedSignals){
+  // First: check API-parsed signals (most reliable)
+  if(parsedSignals && parsedSignals[moveName]) return parsedSignals[moveName];
+
+  // Second: fuzzy match against signals keys (handles slight name variations)
+  if(parsedSignals){
+    const lowerName = moveName.toLowerCase();
+    for(const [key, action] of Object.entries(parsedSignals)){
+      const keyWords = key.toLowerCase().split(/[\s\/]+/).filter(w=>w.length>3);
+      if(keyWords.some(w=>lowerName.includes(w))) return action;
+    }
+  }
+
+  // Third: crude local keyword matching as fallback
   const lowerNotes = (notes||'').toLowerCase();
   const lowerName = moveName.toLowerCase();
   const nameWords = lowerName.split(/[\s\/]+/).filter(w=>w.length>3);
@@ -839,16 +866,16 @@ function decideAction(moveName, perf, notes){
   if(!mentioned && NAME_SYNONYMS[lowerName]){
     mentioned = NAME_SYNONYMS[lowerName].some(syn => lowerNotes.includes(syn));
   }
-  const failureMentioned = mentioned && /(fail|miss|couldn't|could not|short|below)/.test(lowerNotes);
-  const successMentioned = mentioned && /(hit|clean|easy|all reps)/.test(lowerNotes);
+  const failureMentioned = mentioned && /(fail|miss|couldn't|could not|short|below|stall)/.test(lowerNotes);
+  const successMentioned = mentioned && /(hit|clean|easy|all reps|crushed)/.test(lowerNotes);
 
   if(failureMentioned) return 'hold';
   if(successMentioned) return perf==='tough' ? 'hold' : 'progress';
 
-  // fall back to overall performance
+  // Finally: fall back to overall performance
   if(perf==='tough') return 'hold';
   if(perf==='mixed') return isPrimaryMove(moveName) ? 'progress' : 'hold';
-  return 'progress'; // hit everything
+  return 'progress';
 }
 
 function progressLoadField(loadStr, isPrimary, action){
@@ -895,25 +922,23 @@ function progressRepsField(repsStr, isPrimary, action){
   return (parsed.num + repIncrement()) + parsed.suffix;
 }
 
-function generateLocalWeek(targetWeek, fromWeek, perf, notes){
+function generateLocalWeek(targetWeek, fromWeek, perf, notes, parsedSignals){
+  parsedSignals = parsedSignals || {};
   // Deep clone current program as the base
   const base = JSON.parse(JSON.stringify(ST.program || W17));
   const isEvenWeek = parseInt(targetWeek) % 2 === 0;
 
   base.forEach(day => {
     day.moves.forEach(m => {
-      if(isNonProgressing(m.n)) return; // sled, core stability holds, carries — left as-is
+      if(isNonProgressing(m.n)) return;
 
       const isPrimary = isPrimaryMove(m.n);
-      const action = decideAction(m.n, perf, notes);
+      const action = decideAction(m.n, perf, notes, parsedSignals);
 
-      // Band-side progression
       if(m.b) m.b = progressLoadField(m.b, isPrimary, action);
-      // Free-weight-side progression
       if(m.fl) m.fl = progressLoadField(m.fl, isPrimary, action);
       else if(m.f && parseLoadStr(m.f)) m.f = progressLoadField(m.f, isPrimary, action);
 
-      // Reps progression (skip "see loads" and unit-based reps — handled elsewhere)
       if(m.reps && m.reps !== 'see loads'){
         m.reps = progressRepsField(m.reps, isPrimary, action);
       }
@@ -966,19 +991,49 @@ function buildChangeSummary(oldProg, newProg, perf, notes){
   return lines.join('\n');
 }
 
-function generateWeek(){
+async function generateWeek(){
   const week=document.getElementById('gen-week').value;
   const from=document.getElementById('gen-from').value;
   const perf=document.getElementById('gen-perf').value;
-  const notes=document.getElementById('gen-notes').value;
+  const notes=document.getElementById('gen-notes').value.trim();
 
   document.getElementById('gen-result').innerHTML=`<div class="gen-output gen-loading">Generating Week ${week}...</div>`;
 
+  let parsedSignals = {};
+
+  // If there are notes, use API just to parse them into structured hold/progress signals
+  if(notes){
+    try{
+      const movementNames = (ST.program||W17).flatMap(d=>d.moves.map(m=>m.n)).join(', ');
+      const prompt = `You are a strength training assistant. The user logged these notes about their workout: "${notes}"
+
+Here are the movement names in their program: ${movementNames}
+
+Return ONLY a JSON object mapping movement names to one of: "hold", "progress", or "reduce".
+Only include movements explicitly mentioned in the notes.
+Rules: if they failed, stalled, or had pain → "hold" or "reduce". If they hit it easily or crushed it → "progress". 
+Example: {"Banded chest press": "hold", "Lat pulldown": "progress"}
+Return only valid JSON, nothing else.`;
+
+      const r = await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:300,messages:[{role:'user',content:prompt}]})
+      });
+      const d = await r.json();
+      const txt = d.content.filter(b=>b.type==='text').map(b=>b.text).join('').trim();
+      const clean = txt.replace(/```json|```/g,'').trim();
+      parsedSignals = JSON.parse(clean);
+    }catch(e){
+      // API call failed or parse error — fall back to rules-only, no penalty
+      parsedSignals = {};
+    }
+  }
+
   const oldProg = JSON.parse(JSON.stringify(ST.program || W17));
-  const newProg = generateLocalWeek(week, from, perf, notes);
+  const newProg = generateLocalWeek(week, from, perf, notes, parsedSignals);
   const summary = buildChangeSummary(oldProg, newProg, perf, notes);
 
-  // Apply to state and re-render program tab
   ST.program = newProg;
   ST.week = parseInt(week);
   saveState();
@@ -986,8 +1041,39 @@ function generateWeek(){
   document.getElementById('wk-num').textContent = ST.week;
   renderProgDay(ST.progDay);
 
-  document.getElementById('gen-result').innerHTML=`<div class="gen-output">Week ${week} generated and applied to Program tab.\n\n${summary}</div>`;
+  const noteStatus = Object.keys(parsedSignals).length
+    ? `Notes parsed: ${JSON.stringify(parsedSignals)}`
+    : notes ? 'Note parsing unavailable (offline) — used rules only.' : '';
+
+  document.getElementById('gen-result').innerHTML=`<div class="gen-output">Week ${week} generated ✓\n${noteStatus ? noteStatus+'\n' : ''}\n${summary}</div>`;
 }
+
+function resetToCheckpoint(){
+  const w = parseInt(document.getElementById('reset-week').value);
+  const cp = CHECKPOINTS[w];
+  if(!cp){
+    // No exact checkpoint — use W19 as closest baseline with a note
+    const closest = Math.max(...Object.keys(CHECKPOINTS).map(Number).filter(k=>k<=w));
+    const base = CHECKPOINTS[closest] || W17;
+    ST.program = JSON.parse(JSON.stringify(base));
+    ST.week = w;
+    saveState();
+    renderProgDay(ST.progDay);
+    document.getElementById('m-week').textContent = ST.week;
+    document.getElementById('wk-num').textContent = ST.week;
+    document.getElementById('reset-result').textContent = `No exact checkpoint for Week ${w} — reset to Week ${closest} baseline. Use Generate to advance from here.`;
+    return;
+  }
+  ST.program = JSON.parse(JSON.stringify(cp));
+  ST.week = w;
+  saveState();
+  renderProgDay(ST.progDay);
+  document.getElementById('m-week').textContent = ST.week;
+  document.getElementById('wk-num').textContent = ST.week;
+  document.getElementById('reset-result').textContent = `Reset to Week ${w} checkpoint ✓ — Program tab updated.`;
+  setTimeout(()=>document.getElementById('reset-result').textContent='', 3000);
+}
+
 function clearGen(){document.getElementById('gen-result').innerHTML='';document.getElementById('gen-notes').value='';}
 
 // PERSIST
