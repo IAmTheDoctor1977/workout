@@ -30,7 +30,7 @@ html, body { height: 100%; overflow: hidden; background: var(--paper); color: va
 
 /* NAV BAR */
 #navbar { display: flex; background: var(--card); border-top: 0.5px solid var(--rule); padding-bottom: var(--safe-bottom); flex-shrink: 0; order: 2; }
-.nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px 10px; border: none; background: none; color: var(--mid); cursor: pointer; font-size: 10px; font-family: var(--font-body); gap: 3px; transition: color 0.15s; }
+.nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 2px 10px; border: none; background: none; color: var(--mid); cursor: pointer; font-size: 9px; font-family: var(--font-body); gap: 3px; transition: color 0.15s; }
 .nav-btn.active { color: var(--accent); }
 .nav-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -254,6 +254,76 @@ textarea { min-height: 80px; resize: vertical; }
       </div>
     </div>
 
+    <!-- TV SESSION -->
+    <div class="screen" id="s-tv">
+      <div class="screen-header">
+        <div><div class="screen-title">TV <span>SESSION</span></div><div class="screen-sub">Core · Stretch · Bodyweight · ~15 min each</div></div>
+      </div>
+
+      <!-- BLOCK SELECTOR -->
+      <div class="day-chips" style="padding:12px 16px 0;">
+        <div class="day-chip active" onclick="setTVBlock('core',this)">Core</div>
+        <div class="day-chip" onclick="setTVBlock('stretch',this)">Stretch</div>
+        <div class="day-chip" onclick="setTVBlock('bw',this)">Bodyweight</div>
+      </div>
+
+      <!-- CORE BLOCK -->
+      <div id="tv-core" class="tv-block">
+        <div class="section-divider" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>CORE — DAY <span id="core-day-num">1</span></span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="prevCoreDay()">‹</button>
+            <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="nextCoreDay()">›</button>
+          </div>
+        </div>
+        <div class="card" id="core-display"></div>
+        <div class="card" style="margin-top:0;">
+          <div class="card-title">Progression rules</div>
+          <div style="font-size:12px;color:var(--mid);line-height:1.7;">
+            <b style="color:var(--ink)">1.</b> Time first — add 5–10s to holds<br>
+            <b style="color:var(--ink)">2.</b> Reps next — hit top range cleanly for 2 sessions<br>
+            <b style="color:var(--ink)">3.</b> Sets — add 4th set once 3 are solid<br>
+            <b style="color:var(--ink)">4.</b> Tempo — slow the eccentric (3s down)<br>
+            <b style="color:var(--ink)">5.</b> Load last — vest, band, DB; reset reps when you do<br>
+            <span style="color:var(--accent);">Stop if lower back arches off the floor.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- STRETCH BLOCK -->
+      <div id="tv-stretch" class="tv-block" style="display:none;">
+        <div class="section-divider">STRETCH — what did you do today?</div>
+        <div style="padding:0 16px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;">
+            <button class="btn btn-ghost" style="font-size:12px;" onclick="loadStretch('upper')">Upper lifting</button>
+            <button class="btn btn-ghost" style="font-size:12px;" onclick="loadStretch('lower')">Lower lifting</button>
+            <button class="btn btn-ghost" style="font-size:12px;" onclick="loadStretch('pickleball')">Pickleball</button>
+            <button class="btn btn-ghost" style="font-size:12px;" onclick="loadStretch('olympic')">Olympic day</button>
+            <button class="btn btn-ghost" style="font-size:12px;" onclick="loadStretch('rest')">Rest day</button>
+            <button class="btn btn-ghost" style="font-size:12px;" onclick="loadStretch('full')">Full body</button>
+          </div>
+        </div>
+        <div id="stretch-display"></div>
+      </div>
+
+      <!-- BODYWEIGHT BLOCK -->
+      <div id="tv-bw" class="tv-block" style="display:none;">
+        <div class="section-divider" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>BODYWEIGHT — WEEK <span id="bw-week-num">1</span> · DAY <span id="bw-day-num">1</span></span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="prevBWDay()">‹</button>
+            <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="nextBWDay()">›</button>
+          </div>
+        </div>
+        <div class="card" id="bw-display"></div>
+        <div style="padding:0 16px;margin-top:8px;display:flex;gap:8px;">
+          <button class="btn btn-primary" style="flex:1;font-size:12px;" onclick="generateBWWeek()">Generate next BW week</button>
+          <button class="btn btn-ghost" style="font-size:12px;" onclick="logBWSession()">Log session</button>
+        </div>
+        <div id="bw-gen-result"></div>
+      </div>
+    </div>
+
     <!-- EQUIPMENT -->
     <div class="screen" id="s-equipment">
       <div class="screen-header"><div class="screen-title">EQUIP<span>MENT</span></div></div>
@@ -299,6 +369,10 @@ textarea { min-height: 80px; resize: vertical; }
     <button class="nav-btn" onclick="showScreen('equipment',this)">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
       Gear
+    </button>
+    <button class="nav-btn" onclick="showScreen('tv',this)">
+      <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
+      TV
     </button>
   </nav>
 </div>
@@ -1106,6 +1180,308 @@ renderProgChips();
 renderProgDay(0);
 renderRandChips();
 renderRandDay();
+
+// ============================================================
+// TV SESSION — CORE, STRETCH, BODYWEIGHT
+// ============================================================
+
+// CORE DATA
+const CORE_DAYS = [
+  { label:'Anti-Extension / Front Core', focus:'Day 1',
+    exercises:[
+      {n:'Dead bug', sets:'3', reps:'10/side', cue:'Lower back pressed flat. Extend opposite arm+leg slowly. Stop if back lifts.'},
+      {n:'Plank', sets:'3', reps:'30–45s', cue:'Elbows under shoulders. Squeeze glutes and abs. No sagging hips.'},
+      {n:'Hollow hold', sets:'3', reps:'20–30s', cue:'Lower back pressed down. Arms overhead or by sides. Legs low but back flat.'},
+      {n:'Leg lowers (together)', sets:'3', reps:'12', cue:'Legs as a unit. Stop lowering when back starts to arch — bend knees if needed.'},
+    ]},
+  { label:'Rotation & Obliques', focus:'Day 2',
+    exercises:[
+      {n:'Side plank', sets:'3', reps:'30s/side', cue:'Elbow under shoulder. Hips stacked. Drive hip up — don\'t sag.'},
+      {n:'Bicycle crunch', sets:'3', reps:'15/side', cue:'Slow and controlled. Opposite elbow to knee. Don\'t pull your neck.'},
+      {n:'Russian twist (light DB/KB)', sets:'3', reps:'20', cue:'Lean back slightly, feet up or down. Rotate from the torso, not arms.'},
+      {n:'Pallof press (band)', sets:'3', reps:'10/side', cue:'Band at chest height, 10–25 lb tension. Press out and hold 2s. Hips and shoulders stay square.'},
+    ]},
+  { label:'Lower Abs', focus:'Day 3',
+    exercises:[
+      {n:'Reverse crunch', sets:'3', reps:'15', cue:'Curl hips up toward ribs. Don\'t swing. Lower slowly.'},
+      {n:'Flutter kicks', sets:'3', reps:'30s', cue:'Lower back flat. Small rapid kicks. Hands under hips if needed.'},
+      {n:'Heel taps / lying leg raises', sets:'3', reps:'12', cue:'Legs straight or slightly bent. Lower back stays down throughout.'},
+      {n:'Plank with shoulder taps', sets:'3', reps:'20 taps', cue:'Feet wide for stability. Minimize hip rotation on each tap.'},
+    ]},
+  { label:'Mixed / Burnout', focus:'Day 4',
+    exercises:[
+      {n:'Dead bug', sets:'2', reps:'10/side', cue:'Same as Day 1. Move slow and breathe out on each extension.'},
+      {n:'Side plank', sets:'2', reps:'30s/side', cue:'Hold solid. Add a hip dip if easy.'},
+      {n:'Bicycle crunch', sets:'2', reps:'20/side', cue:'Slower than you think. Full rotation each rep.'},
+      {n:'Plank', sets:'2', reps:'45s', cue:'Squeeze everything. Breathe.'},
+      {n:'Hollow hold', sets:'2', reps:'30s', cue:'Finish strong. Arms overhead if you can hold form.'},
+    ]},
+];
+
+// STRETCH LIBRARY
+const STRETCH_LIBRARY = {
+  upper:[
+    {n:'Doorway pec stretch', dur:'45s/side', cue:'Arm at 90°, forearm on doorframe. Step through gently. Feel the front of the chest.'},
+    {n:'Cross-body shoulder', dur:'45s/side', cue:'Pull arm across chest at shoulder height. Hold at the back of the shoulder.'},
+    {n:'Overhead tricep/lat stretch', dur:'45s/side', cue:'Arm overhead, hand behind head. Gently pull elbow with other hand.'},
+    {n:'Sleeper stretch', dur:'45s/side', cue:'Side-lying, arm at 90°. Gently press wrist down toward floor. Posterior shoulder.'},
+    {n:'Wall slide (mobility)', dur:'10 reps', cue:'Back flat against wall. Slide arms up overhead keeping contact. Great for shoulder health.'},
+    {n:'Wrist flexor stretch', dur:'30s/side', cue:'Arm straight, palm up. Gently pull fingers back with other hand.'},
+    {n:'Wrist extensor stretch', dur:'30s/side', cue:'Arm straight, palm down. Gently press fingers down and back.'},
+    {n:'Neck side bend', dur:'30s/side', cue:'Ear toward shoulder, slow and small range. No forcing. Hold gently.'},
+    {n:'Neck rotation', dur:'30s/side', cue:'Turn chin toward shoulder slowly. Small range. Stop at first resistance.'},
+    {n:'Thread the needle', dur:'45s/side', cue:'On all fours, thread one arm under body. Thoracic rotation and shoulder stretch.'},
+  ],
+  lower:[
+    {n:'Couch stretch', dur:'60s/side', cue:'Rear knee on floor, foot up against wall or couch. Drive hips forward. Hip flexor.'},
+    {n:'Figure-4 glute stretch', dur:'45s/side', cue:'Ankle over opposite knee. Either lying or seated. Push knee away gently.'},
+    {n:'Hamstring stretch (strap/belt)', dur:'45s/side', cue:'Lying down, loop a strap around foot. Leg straight. Pull gently. Don\'t force.'},
+    {n:'Adductor butterfly', dur:'45s', cue:'Soles together, knees out. Gently press knees toward floor. Inner thigh.'},
+    {n:'Side-lying adductor', dur:'45s/side', cue:'Bottom leg straight out to side. Top leg bent. Relax into the inner thigh stretch.'},
+    {n:'Calf stretch', dur:'45s/side', cue:'Foot against wall or on step. Heel down, lean in. Straight knee = upper calf.'},
+    {n:'Soleus stretch', dur:'45s/side', cue:'Same position but bend the knee slightly. Hits the deeper calf muscle.'},
+    {n:'90/90 hip switch', dur:'10 reps', cue:'Both legs at 90°. Rotate hips side to side. Slow and controlled. Hip mobility.'},
+    {n:'Seated piriformis stretch', dur:'45s/side', cue:'Ankle over opposite knee, lean forward. Deep glute/external rotator.'},
+    {n:'Kneeling hip flexor lunge', dur:'45s/side', cue:'Rear knee on ground. Drive hips forward. Squeeze the glute of the rear leg.'},
+  ],
+  pickleball:[
+    {n:'Calf stretch', dur:'45s/side', cue:'Foot against wall or step. Heel down. All that lateral cutting loads the calves hard.'},
+    {n:'Soleus stretch', dur:'45s/side', cue:'Same but bent knee. Deeper calf. Important after lateral movement.'},
+    {n:'Figure-4 glute stretch', dur:'45s/side', cue:'Ankle over knee. Glutes work hard on the court — give them time.'},
+    {n:'Couch stretch', dur:'60s/side', cue:'Hip flexors shorten during the bent-knee ready position. This counters it.'},
+    {n:'Adductor butterfly', dur:'45s', cue:'Inner thigh — lateral lunge patterns put a lot of load here.'},
+    {n:'Doorway pec stretch', dur:'45s/side', cue:'Overhead serves and reaches tighten the pec minor. Open it up.'},
+    {n:'Cross-body shoulder', dur:'45s/side', cue:'Posterior shoulder — takes a beating from the follow-through.'},
+    {n:'Wrist flexor stretch', dur:'30s/side', cue:'Grip and paddle control stress the forearms. Don\'t skip this.'},
+    {n:'Wrist extensor stretch', dur:'30s/side', cue:'Back of forearm. Prevents tennis elbow-type tightness.'},
+    {n:'Thoracic rotation (seated)', dur:'10/side', cue:'Seated, arms crossed. Rotate from mid-back. Rotational sport needs mobile T-spine.'},
+    {n:'90/90 hip switch', dur:'10 reps', cue:'Hip mobility for all the direction changes.'},
+    {n:'Neck rotation', dur:'30s/side', cue:'Slow and small. Tracking the ball = lots of neck movement. Keep it gentle.'},
+  ],
+  olympic:[
+    {n:'Overhead squat (PVC)', dur:'10 reps', cue:'Mobility cooldown. Arms locked out, sit into full depth. Ankle/hip/T-spine combined.'},
+    {n:'Couch stretch', dur:'60s/side', cue:'Hip flexors loaded heavily in the pull. Essential after Olympic work.'},
+    {n:'Hamstring stretch (strap)', dur:'45s/side', cue:'Full hip extension at lockout loads hamstrings. Stretch them out.'},
+    {n:'Wrist extension stretch', dur:'45s/side', cue:'Front rack position is brutal on wrists. Knuckles on floor, lean back.'},
+    {n:'Wrist flexor stretch', dur:'30s/side', cue:'Both sides of the wrist need attention after cleans and presses.'},
+    {n:'Doorway pec stretch', dur:'45s/side', cue:'Push press loads anterior shoulder. Open the chest after.'},
+    {n:'Overhead tricep/lat stretch', dur:'45s/side', cue:'Lat is loaded in the pull — stretch it in overhead position.'},
+    {n:'Thoracic rotation (seated)', dur:'10/side', cue:'T-spine mobility matters for bar path. Maintain it.'},
+    {n:'Calf stretch', dur:'45s/side', cue:'Triple extension loads the calves. Stretch after.'},
+    {n:'90/90 hip switch', dur:'10 reps', cue:'Hip mobility for receiving position.'},
+    {n:'Neck rotation', dur:'30s/side', cue:'Slow, small range. Bar path tracking stresses the neck.'},
+  ],
+  rest:[
+    {n:'Cat-cow', dur:'10 reps', cue:'On all fours. Arch up (cat), sag down (cow). Slow breath with each. Spine mobility.'},
+    {n:'Supine spinal twist', dur:'45s/side', cue:'Lying on back, knee across body. Shoulders flat. Gentle thoracic rotation.'},
+    {n:'Figure-4 glute stretch', dur:'45s/side', cue:'No load, just recovery. Glutes tighten from sitting and training.'},
+    {n:'Couch stretch', dur:'60s/side', cue:'Hip flexors shorten from sitting. Classic rest-day must.'},
+    {n:'Hamstring stretch (strap)', dur:'45s/side', cue:'No bouncing. Easy passive hold. Let the muscle relax.'},
+    {n:'Doorway pec stretch', dur:'45s/side', cue:'Computer posture and pressing tighten the chest. Open it up.'},
+    {n:'Thread the needle', dur:'45s/side', cue:'Thoracic rotation. Feels great on rest days.'},
+    {n:'Neck side bend', dur:'30s/side', cue:'Gentle. Ear to shoulder. Especially important given your cervical history.'},
+    {n:'Neck rotation', dur:'30s/side', cue:'Small range. Hold at first resistance. Don\'t force.'},
+    {n:'Child\'s pose', dur:'60s', cue:'Arms forward or by sides. Full back decompression. Breathe into the lower back.'},
+    {n:'90/90 hip switch', dur:'10 reps', cue:'Hip mobility maintenance. Do this on every rest day.'},
+  ],
+  full:[
+    {n:'Cat-cow', dur:'10 reps', cue:'Start here always. Warms the spine.'},
+    {n:'Couch stretch', dur:'60s/side', cue:'Hip flexors first — most people need this most.'},
+    {n:'Figure-4 glute stretch', dur:'45s/side', cue:'Glute and external rotator.'},
+    {n:'Hamstring stretch (strap)', dur:'45s/side', cue:'Passive hold. No forcing.'},
+    {n:'Adductor butterfly', dur:'45s', cue:'Inner thigh. Often neglected.'},
+    {n:'Calf stretch', dur:'45s/side', cue:'Straight knee first.'},
+    {n:'Soleus stretch', dur:'45s/side', cue:'Bent knee. Deeper calf.'},
+    {n:'Doorway pec stretch', dur:'45s/side', cue:'Open the chest.'},
+    {n:'Cross-body shoulder', dur:'45s/side', cue:'Posterior shoulder.'},
+    {n:'Overhead tricep/lat stretch', dur:'45s/side', cue:'Lat and tricep.'},
+    {n:'Supine spinal twist', dur:'45s/side', cue:'T-spine rotation.'},
+    {n:'Neck side bend', dur:'30s/side', cue:'Small and slow.'},
+    {n:'Neck rotation', dur:'30s/side', cue:'Same. No forcing.'},
+    {n:'Child\'s pose', dur:'60s', cue:'Finish here. Full decompression.'},
+  ],
+};
+
+// BODYWEIGHT PROGRAM DATA
+const BW_PROGRAM = {
+  week: 1,
+  dayIdx: 0,
+  logs: [],
+  days: [
+    { label:'Push', focus:'Chest · Shoulders · Triceps',
+      exercises:[
+        {n:'Push-up', sets:3, reps:'10–15', cue:'Hands shoulder-width. Full range. Squeeze chest at top.'},
+        {n:'Pike push-up', sets:3, reps:'8–10', cue:'Hips high, head between arms. Overhead pressing pattern.'},
+        {n:'Diamond push-up', sets:3, reps:'8–10', cue:'Hands close together. Elbows stay tight to body. Tricep focus.'},
+        {n:'Tricep dip (chair/bench)', sets:3, reps:'12–15', cue:'Hands behind on a stable surface. Keep hips close. Don\'t shrug.'},
+        {n:'Decline push-up', sets:2, reps:'8–10', cue:'Feet elevated. Upper chest emphasis.'},
+      ]},
+    { label:'Pull', focus:'Back · Biceps · Rear Delt',
+      exercises:[
+        {n:'Pull-up / chin-up', sets:3, reps:'5–10', cue:'Dead hang start. Full range. Chest to bar if possible.'},
+        {n:'Inverted row (table/bar)', sets:3, reps:'10–15', cue:'Body straight as a plank. Pull chest to bar. Retract scapulae first.'},
+        {n:'Towel/band bicep curl', sets:3, reps:'12–15', cue:'Step on band or loop towel around a door handle. Curl slow.'},
+        {n:'Superman hold', sets:3, reps:'10 × 3s hold', cue:'Lying prone. Lift arms and legs. Squeeze glutes. Lower back and posterior chain.'},
+        {n:'Band face pull (or band pull-apart)', sets:3, reps:'15', cue:'Shoulder health staple. Light band. Pull to face, elbows high.'},
+      ]},
+    { label:'Legs', focus:'Quads · Glutes · Hamstrings',
+      exercises:[
+        {n:'BW squat', sets:3, reps:'15–20', cue:'Full depth. Knees track toes. Chest up.'},
+        {n:'Reverse lunge', sets:3, reps:'10/leg', cue:'Step back, knee to 90°. Upright torso. Deceleration focus.'},
+        {n:'Glute bridge', sets:3, reps:'15 × 2s hold', cue:'Upper back on floor. Drive hips up. Squeeze at top.'},
+        {n:'Single-leg RDL (BW)', sets:3, reps:'8/leg', cue:'Hip hinge on one leg. Feel the hamstring load. Control the balance.'},
+        {n:'Lateral lunge', sets:3, reps:'8/leg', cue:'Wide step sideways. Sit into the hip. Keep the straight leg straight.'},
+        {n:'Calf raise (single leg)', sets:3, reps:'15/leg', cue:'Use wall for balance. Full range. Pause at top.'},
+      ]},
+    { label:'Core + Carry', focus:'Anti-extension · Rotation · Stability',
+      exercises:[
+        {n:'Dead bug', sets:3, reps:'10/side', cue:'Lower back flat. Breathe out on extension. Slow.'},
+        {n:'Side plank', sets:3, reps:'30s/side', cue:'Elbow under shoulder. Drive hip up. Don\'t sag.'},
+        {n:'Hollow body hold', sets:3, reps:'25–35s', cue:'Press lower back to floor. Arms overhead or by sides.'},
+        {n:'Plank shoulder tap', sets:3, reps:'20 taps', cue:'Wide feet. Minimize hip rotation. Slow taps.'},
+        {n:'Bear crawl', sets:3, reps:'10 steps fwd+back', cue:'Knees 1" off floor. Opposite hand/foot. Keep hips level.'},
+        {n:'Standing band chop (or slow twist)', sets:3, reps:'10/side', cue:'Rotate from the torso. Light resistance or bodyweight. Controlled.'},
+      ]},
+  ]
+};
+
+let TV_ST = {
+  coreDay: 0,
+  bwWeek: 1,
+  bwDayIdx: 0,
+  bwDays: JSON.parse(JSON.stringify(BW_PROGRAM.days)),
+  bwLogs: [],
+};
+
+function loadTVState(){
+  try{
+    const s = localStorage.getItem('wt_tv');
+    if(s){
+      const d = JSON.parse(s);
+      TV_ST.coreDay = d.coreDay||0;
+      TV_ST.bwWeek = d.bwWeek||1;
+      TV_ST.bwDayIdx = d.bwDayIdx||0;
+      TV_ST.bwLogs = d.bwLogs||[];
+      if(d.bwDays) TV_ST.bwDays = d.bwDays;
+    }
+  }catch(e){}
+}
+
+function saveTVState(){
+  try{ localStorage.setItem('wt_tv', JSON.stringify(TV_ST)); }catch(e){}
+}
+
+function setTVBlock(block, btn){
+  document.querySelectorAll('.tv-block').forEach(b=>b.style.display='none');
+  document.getElementById('tv-'+block).style.display='block';
+  document.querySelectorAll('#s-tv .day-chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  if(block==='core') renderCoreDay();
+  if(block==='bw') renderBWDay();
+}
+
+// CORE
+function renderCoreDay(){
+  const day = CORE_DAYS[TV_ST.coreDay];
+  document.getElementById('core-day-num').textContent = TV_ST.coreDay+1;
+  let html = `<div class="card-title">${day.label}</div>`;
+  html += `<table class="prog-table"><thead><tr><th style="width:30%">Exercise</th><th style="width:10%;text-align:center">Sets</th><th style="width:15%;text-align:center">Reps</th><th>Cue</th></tr></thead><tbody>`;
+  day.exercises.forEach(e=>{
+    html += `<tr><td><div class="ex-name">${e.n}</div></td><td class="num-cell">${e.sets}</td><td class="num-cell">${e.reps}</td><td><div style="font-size:11.5px;color:var(--mid);font-style:italic;">${e.cue}</div></td></tr>`;
+  });
+  html += `</tbody></table>`;
+  document.getElementById('core-display').innerHTML = html;
+}
+
+function nextCoreDay(){ TV_ST.coreDay=(TV_ST.coreDay+1)%4; saveTVState(); renderCoreDay(); }
+function prevCoreDay(){ TV_ST.coreDay=(TV_ST.coreDay+3)%4; saveTVState(); renderCoreDay(); }
+
+// STRETCH
+function loadStretch(type){
+  const stretches = STRETCH_LIBRARY[type]||[];
+  const labels = {upper:'Upper Lifting',lower:'Lower Lifting',pickleball:'Pickleball',olympic:'Olympic Day',rest:'Rest Day',full:'Full Body'};
+  let html = `<div class="card" style="margin-top:0;"><div class="card-title">Stretch — ${labels[type]||type}</div>`;
+  html += `<p style="font-size:11.5px;color:var(--mid);margin-bottom:10px;">Hold 30–45s each. No bouncing. Breathe into the stretch.</p>`;
+  html += `<table class="prog-table"><thead><tr><th style="width:35%">Stretch</th><th style="width:15%;text-align:center">Duration</th><th>Cue</th></tr></thead><tbody>`;
+  stretches.forEach(s=>{
+    html += `<tr><td><div class="ex-name">${s.n}</div></td><td class="num-cell" style="font-size:11px;">${s.dur}</td><td><div style="font-size:11.5px;color:var(--mid);font-style:italic;">${s.cue}</div></td></tr>`;
+  });
+  html += `</tbody></table></div>`;
+  document.getElementById('stretch-display').innerHTML = html;
+}
+
+// BODYWEIGHT
+function renderBWDay(){
+  const day = TV_ST.bwDays[TV_ST.bwDayIdx];
+  document.getElementById('bw-week-num').textContent = TV_ST.bwWeek;
+  document.getElementById('bw-day-num').textContent = TV_ST.bwDayIdx+1;
+  let html = `<div class="card-title">${day.label} <span style="font-size:11px;color:var(--mid);font-weight:400;">· ${day.focus}</span></div>`;
+  html += `<table class="prog-table"><thead><tr><th style="width:30%">Exercise</th><th style="width:10%;text-align:center">Sets</th><th style="width:15%;text-align:center">Reps</th><th>Cue</th></tr></thead><tbody>`;
+  day.exercises.forEach(e=>{
+    html += `<tr><td><div class="ex-name">${e.n}</div></td><td class="num-cell">${e.sets}</td><td class="num-cell">${e.reps}</td><td><div style="font-size:11.5px;color:var(--mid);font-style:italic;">${e.cue}</div></td></tr>`;
+  });
+  html += `</tbody></table>`;
+  document.getElementById('bw-display').innerHTML = html;
+}
+
+function nextBWDay(){ TV_ST.bwDayIdx=(TV_ST.bwDayIdx+1)%4; saveTVState(); renderBWDay(); }
+function prevBWDay(){ TV_ST.bwDayIdx=(TV_ST.bwDayIdx+3)%4; saveTVState(); renderBWDay(); }
+
+function logBWSession(){
+  const entry = { week: TV_ST.bwWeek, day: TV_ST.bwDayIdx+1, label: TV_ST.bwDays[TV_ST.bwDayIdx].label, date: new Date().toLocaleDateString() };
+  TV_ST.bwLogs.unshift(entry);
+  saveTVState();
+  document.getElementById('bw-gen-result').innerHTML = `<div style="padding:8px 16px;font-size:12px;color:var(--mid);font-family:var(--font-mono);">Session logged ✓ — Week ${entry.week} Day ${entry.day} ${entry.label}</div>`;
+  setTimeout(()=>document.getElementById('bw-gen-result').innerHTML='', 2500);
+}
+
+function generateBWWeek(){
+  // Deload every 4 weeks
+  const nextWeek = TV_ST.bwWeek + 1;
+  const isDeload = nextWeek % 4 === 0;
+  const newDays = JSON.parse(JSON.stringify(BW_PROGRAM.days));
+
+  if(isDeload){
+    // Deload: drop to 2 sets, reduce reps to bottom of range
+    newDays.forEach(day=>{
+      day.exercises.forEach(e=>{
+        e.sets = 2;
+        e.reps = e.reps.replace(/(\d+)–\d+/, '$1').replace(/(\d+)\/\w+/, (m,n)=>(Math.max(5,parseInt(n)-3)+m.slice(m.indexOf('/'))));
+      });
+    });
+    TV_ST.bwDays = newDays;
+    TV_ST.bwWeek = nextWeek;
+    TV_ST.bwDayIdx = 0;
+    saveTVState();
+    renderBWDay();
+    document.getElementById('bw-gen-result').innerHTML = `<div style="padding:10px 16px;font-size:12px;font-family:var(--font-mono);color:var(--accent);">Week ${nextWeek} is a DELOAD — 2 sets, reduced reps. Recover well.</div>`;
+    return;
+  }
+
+  // Progress: bump reps by 1–2 and add set on Day 4 every other week
+  newDays.forEach((day,di)=>{
+    day.exercises.forEach(e=>{
+      // bump reps range up by 1
+      e.reps = e.reps.replace(/(\d+)–(\d+)/,(m,a,b)=>`${parseInt(a)+1}–${parseInt(b)+1}`);
+      e.reps = e.reps.replace(/^(\d+)\/(\w+)$/,(m,n,suf)=>`${parseInt(n)+1}/${suf}`);
+      e.reps = e.reps.replace(/^(\d+)s$/,(m,n)=>`${parseInt(n)+5}s`);
+      // add a set on week 3 for harder days
+      if(TV_ST.bwWeek >= 2 && e.sets < 4) e.sets = Math.min(4, e.sets + (TV_ST.bwWeek%3===0?1:0));
+    });
+  });
+
+  TV_ST.bwDays = newDays;
+  TV_ST.bwWeek = nextWeek;
+  TV_ST.bwDayIdx = 0;
+  saveTVState();
+  renderBWDay();
+  document.getElementById('bw-gen-result').innerHTML = `<div style="padding:10px 16px;font-size:12px;font-family:var(--font-mono);color:var(--mid);">Week ${nextWeek} generated ✓ — reps bumped, program tab updated.</div>`;
+  setTimeout(()=>document.getElementById('bw-gen-result').innerHTML='', 3000);
+}
+
+// INIT TV
+loadTVState();
+renderCoreDay();
 </script>
 </body>
 </html>
