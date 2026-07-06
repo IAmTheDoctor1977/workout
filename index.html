@@ -73,6 +73,9 @@ html, body { height: 100%; overflow: hidden; background: var(--paper); color: va
 .load-b { color: var(--accent); font-family: var(--font-mono); font-size: 11px; }
 .load-f { color: #3b82f6; font-family: var(--font-mono); font-size: 11px; }
 .num-cell { text-align: center; font-family: var(--font-mono); font-size: 12px; }
+.log-input { width: 100%; padding: 4px 5px; background: var(--surface); border: 0.5px solid var(--rule); border-radius: 5px; font-size: 12px; font-family: var(--font-mono); color: var(--ink); text-align: center; -webkit-appearance: none; }
+.log-input:focus { border-color: var(--accent); outline: none; }
+.save-row-btn { width: 100%; margin-top: 8px; padding: 8px; background: var(--accent); color: white; border: none; border-radius: 6px; font-size: 12px; font-family: var(--font-body); font-weight: 500; cursor: pointer; }
 
 /* WARMUP */
 .warmup-strip { margin: 10px 16px 0; background: var(--surface); border-radius: var(--r); padding: 10px 12px; }
@@ -384,8 +387,8 @@ const CHECKPOINTS = {
     { label:'Upper A — Push', type:'upper',
       warmup:'2 min cardio · Arm circles 30s each · Band pull-apart 2×15 · Wall slide 2×10 · Push-up 2×10 slow · DB ramp-up: 50% ×5 → 75% ×3',
       moves:[
-        {n:'Banded chest press',b:'220 lb',f:'DB bench press',fl:'75 lb each',sets:5,reps:'8'},
-        {n:'Shoulder press',b:'115 lb',f:'DB shoulder press',fl:'40 lb each',sets:5,reps:'8'},
+        {n:'Banded chest press',b:'220 lb',f:'DB bench press',fl:'75 lb each',sets:4,reps:'8'},
+        {n:'Shoulder press',b:'115 lb',f:'DB shoulder press',fl:'40 lb each',sets:4,reps:'8'},
         {n:'Chest fly',b:'55 lb',f:'DB fly',fl:'25 lb each',sets:4,reps:'16'},
         {n:'Lateral raise',b:'25 lb',f:'DB lateral raise',fl:'20 lb each',sets:4,reps:'22'},
         {n:'Tricep overhead ext',b:'105 lb',f:'Barbell overhead ext',fl:'60 lb',sets:3,reps:'12'},
@@ -396,7 +399,7 @@ const CHECKPOINTS = {
       warmup:'2 min cardio · Hip circles 30s each · 90/90 hip switch 10 each · World\'s greatest stretch 5 each · Leg swings · Glute bridge 2×15 · Banded good morning 2×10 · BW RDL 2×8 · Bar ramp-up → 90% ×1',
       moves:[
         {n:'Sled harness sprint',b:'—',f:'4 × 15 yd light',fl:'',sets:4,reps:'15 yd',sec:'Sled primer'},
-        {n:'Banded deadlift',b:'305 lb',f:'Barbell deadlift',fl:'280 lb',sets:5,reps:'10'},
+        {n:'Banded deadlift',b:'305 lb',f:'Barbell deadlift',fl:'280 lb',sets:4,reps:'10'},
         {n:'Romanian deadlift',b:'195 lb',f:'Barbell RDL',fl:'210 lb',sets:4,reps:'10'},
         {n:'Hamstring curl',b:'70 lb',f:'Banded leg curl',fl:'70 lb',sets:3,reps:'18'},
         {n:'Hip thrusts / KB swing',b:'BW × 32',f:'KB swing',fl:'53 lb × 24',sets:4,reps:'see loads'},
@@ -404,8 +407,8 @@ const CHECKPOINTS = {
     { label:'Upper B — Pull', type:'upper',
       warmup:'2 min cardio · Band pull-apart 2×15 · Face pull light band 2×15 · Scapular pull-up 2×8 · Prone Y-T-W 1×8 · Dead hang 2×20–30s',
       moves:[
-        {n:'Lat pulldown',b:'155 lb',f:'Pull-up',fl:'BW +5 lb',sets:5,reps:'10'},
-        {n:'Banded row',b:'245 lb',f:'KB single-arm row',fl:'70 lb each',sets:5,reps:'10'},
+        {n:'Lat pulldown',b:'155 lb',f:'Pull-up',fl:'BW +5 lb',sets:4,reps:'10'},
+        {n:'Banded row',b:'245 lb',f:'KB single-arm row',fl:'70 lb each',sets:4,reps:'10'},
         {n:'Face pull',b:'55 lb',f:'Banded face pull',fl:'55 lb',sets:4,reps:'22'},
         {n:'Rear delt fly',b:'20 lb',f:'DB rear delt fly',fl:'15 lb each',sets:3,reps:'20'},
         {n:'Strict bicep curl',b:'105 lb',f:'Barbell curl',fl:'60 lb',sets:3,reps:'14'},
@@ -417,7 +420,7 @@ const CHECKPOINTS = {
       warmup:'3 min cardio · Hip circles · World\'s greatest stretch 5 each · OH squat PVC 2×10 · Muscle clean empty bar 2×5 · Hang clean empty bar 3×3 · Power clean 50% 3×2',
       moves:[
         {n:'Sled push sprint',b:'—',f:'Explosive — light load',fl:'4 × 10 yd',sets:4,reps:'10 yd',sec:'Sled primer'},
-        {n:'Power clean',b:'—',f:'Barbell',fl:'140 lb',sets:5,reps:'3'},
+        {n:'Power clean',b:'—',f:'Barbell',fl:'140 lb',sets:4,reps:'3'},
         {n:'Hang clean',b:'—',f:'Barbell',fl:'130 lb',sets:4,reps:'4'},
         {n:'Push press',b:'—',f:'Barbell',fl:'120 lb',sets:4,reps:'5'},
         {n:'Snatch-grip deadlift',b:'—',f:'Barbell',fl:'200 lb',sets:3,reps:'5'},
@@ -677,7 +680,7 @@ const POOL = {
 
 const DAY_TEMPLATES = [
   {label:'Upper A',slots:[
-    {cat:'horizontal_push',sets:5,reps:'8'},{cat:'vertical_push',sets:5,reps:'9'},
+    {cat:'horizontal_push',sets:4,reps:'8'},{cat:'vertical_push',sets:4,reps:'9'},
     {cat:'chest_acc',sets:4,reps:'15'},{cat:'shoulder_acc',sets:4,reps:'21'},
     {cat:'tricep',sets:3,reps:'12'},
     {cat:'core_antirot',sec:'Core',sets:3,reps:'10/side',lock:true},
@@ -685,11 +688,11 @@ const DAY_TEMPLATES = [
   ]},
   {label:'Lower A',slots:[
     {cat:'sled',sec:'Sled primer',sets:4,reps:'15 yd',lock:true,fixed:{n:'Sled harness sprint',b:'—',bl:'—',f:'4×15 yd light',fl:''}},
-    {cat:'hinge_primary',sets:5,reps:'10'},{cat:'hinge_secondary',sets:4,reps:'10'},
+    {cat:'hinge_primary',sets:4,reps:'10'},{cat:'hinge_secondary',sets:4,reps:'10'},
     {cat:'hamstring',sets:3,reps:'17'},{cat:'glute',sets:4,reps:'22'},
   ]},
   {label:'Upper B',slots:[
-    {cat:'vertical_pull',sets:5,reps:'10'},{cat:'horizontal_pull',sets:5,reps:'10'},
+    {cat:'vertical_pull',sets:4,reps:'10'},{cat:'horizontal_pull',sets:4,reps:'10'},
     {cat:'rear_delt',sets:4,reps:'18'},{cat:'rear_delt',sets:3,reps:'17'},
     {cat:'bicep',sets:3,reps:'14'},{cat:'bicep',sets:4,reps:'18'},
     {cat:'core_antiext',sec:'Core',sets:3,reps:'10/side',lock:true},
@@ -697,7 +700,7 @@ const DAY_TEMPLATES = [
   ]},
   {label:'Olympic',slots:[
     {cat:'sled',sec:'Sled primer',sets:4,reps:'10 yd',lock:true,fixed:{n:'Sled push sprint',b:'—',bl:'—',f:'4×10 yd explosive',fl:''}},
-    {cat:'oly',lock:true,fixed:{n:'Power clean',b:'—',bl:'—',f:'Barbell',fl:'135 lb'},sets:5,reps:'3'},
+    {cat:'oly',lock:true,fixed:{n:'Power clean',b:'—',bl:'—',f:'Barbell',fl:'135 lb'},sets:4,reps:'3'},
     {cat:'oly',lock:true,fixed:{n:'Hang clean',b:'—',bl:'—',f:'Barbell',fl:'125 lb'},sets:4,reps:'4'},
     {cat:'oly',lock:true,fixed:{n:'Push press',b:'—',bl:'—',f:'Barbell',fl:'115 lb'},sets:4,reps:'5'},
     {cat:'oly',lock:true,fixed:{n:'Snatch-grip deadlift',b:'—',bl:'—',f:'Barbell',fl:'195 lb'},sets:3,reps:'5'},
@@ -750,22 +753,62 @@ function renderProgChips(){
   el.innerHTML=ST.program.map((d,i)=>`<div class="day-chip${i===ST.progDay?' active':''}" onclick="setProgDay(${i})">${d.label.split('—')[0].trim()}</div>`).join('');
 }
 function setProgDay(i){ST.progDay=i;renderProgChips();renderProgDay(i);}
+function capSets(s){ return Math.min(4, parseInt(s)||4); }
+
 function renderProgDay(i){
   const day=ST.program[i];
   document.getElementById('prog-warmup').textContent=day.warmup;
-  let html='<thead><tr><th style="width:38%">Movement</th><th style="width:17%">Band</th><th style="width:18%">Free weight</th><th style="width:8%;text-align:center">Sets</th><th style="width:19%;text-align:center">Reps</th></tr></thead><tbody>';
+  let html='<thead><tr><th style="width:32%">Movement</th><th style="width:14%">Band</th><th style="width:16%">Free weight</th><th style="width:11%;text-align:center">Sets</th><th style="width:13%;text-align:center">Reps</th><th style="width:14%;text-align:center">Actual</th></tr></thead><tbody>';
   let lastSec=null;
-  day.moves.forEach(m=>{
-    if(m.sec!==lastSec){if(m.sec)html+=`<tr class="sec-row"><td colspan="5">${m.sec}</td></tr>`;lastSec=m.sec||null;}
+  day.moves.forEach((m,mi)=>{
+    if(m.sec!==lastSec){if(m.sec)html+=`<tr class="sec-row"><td colspan="6">${m.sec}</td></tr>`;lastSec=m.sec||null;}
     const bc=m.b&&m.b!=='—'?`<span class="load-b">${m.b}</span>`:'<span style="color:var(--mid)">—</span>';
     let fc='';
-    if(m.f&&m.f!=='—')fc+=`<span style="font-size:12px">${m.f}</span>`;
+    if(m.f&&m.f!=='—')fc+=`<span style="font-size:11px">${m.f}</span>`;
     if(m.fl)fc+=`${m.f&&m.f!=='—'?'<br>':''}<span class="load-f">${m.fl}</span>`;
     if(!fc)fc='<span style="color:var(--mid)">—</span>';
-    html+=`<tr><td><div class="ex-name">${m.n}</div></td><td>${bc}</td><td>${fc}</td><td class="num-cell">${m.sets}</td><td class="num-cell">${m.reps}</td></tr>`;
+    const sets=capSets(m.sets);
+    const actualLoad=m.logLoad||m.fl||'';
+    const actualReps=m.logReps||m.reps||'';
+    const actualSets=m.logSets||sets;
+    html+=`<tr>
+      <td><div class="ex-name">${m.n}</div></td>
+      <td>${bc}</td>
+      <td>${fc}</td>
+      <td class="num-cell">${sets}</td>
+      <td class="num-cell">${m.reps}</td>
+      <td>
+        <input class="log-input" style="margin-bottom:3px" type="text" placeholder="load" value="${actualLoad}" onchange="updateProgLog(${i},${mi},'logLoad',this.value)">
+        <input class="log-input" style="margin-bottom:3px" type="text" placeholder="reps" value="${actualReps}" onchange="updateProgLog(${i},${mi},'logReps',this.value)">
+        <input class="log-input" type="number" placeholder="sets" value="${actualSets}" min="1" max="4" onchange="updateProgLog(${i},${mi},'logSets',this.value)">
+      </td>
+    </tr>`;
   });
   html+='</tbody>';
+  html+=`<tfoot><tr><td colspan="6"><button class="save-row-btn" onclick="saveProgDayLog(${i})">Save Day ${i+1} log ✓</button></td></tr></tfoot>`;
   document.getElementById('prog-table').innerHTML=html;
+}
+
+function updateProgLog(dayIdx, moveIdx, field, value){
+  if(!ST.program[dayIdx] || !ST.program[dayIdx].moves[moveIdx]) return;
+  ST.program[dayIdx].moves[moveIdx][field] = value;
+}
+
+function saveProgDayLog(dayIdx){
+  const day = ST.program[dayIdx];
+  const notes = day.moves.map(m=>{
+    const parts=[];
+    if(m.logLoad) parts.push(m.logLoad);
+    if(m.logReps) parts.push(m.logReps+' reps');
+    if(m.logSets) parts.push(m.logSets+' sets');
+    return parts.length ? `${m.n}: ${parts.join(', ')}` : null;
+  }).filter(Boolean).join(' · ');
+  const entry={week:ST.week, day:`Day ${dayIdx+1} — ${day.label}`, result:'hit', notes, date:new Date().toLocaleDateString()};
+  ST.logs.unshift(entry);
+  saveState();
+  // brief flash confirmation
+  const btn = document.querySelector(`#prog-table tfoot button`);
+  if(btn){ btn.textContent='Saved ✓'; btn.style.background='#3a7d3a'; setTimeout(()=>{ btn.textContent=`Save Day ${dayIdx+1} log ✓`; btn.style.background=''; },2000); }
 }
 
 // LOG
