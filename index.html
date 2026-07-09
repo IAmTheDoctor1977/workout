@@ -460,13 +460,18 @@ const SEED_LOGS = [
 
 const DEFAULT_EQ = [
   {name:'10 lb band',type:'Band'},{name:'20 lb band',type:'Band'},{name:'30 lb band',type:'Band'},
-  {name:'40 lb band',type:'Band'},{name:'50 lb band',type:'Band'},
-  {name:'10 lb KB',type:'Kettlebell'},{name:'35 lb KB ×2',type:'Kettlebell'},
+  {name:'40 lb band',type:'Band'},{name:'50 lb band',type:'Band'},{name:'Light loop bands',type:'Band'},
+  {name:'10 lb KB',type:'Kettlebell'},{name:'20 lb KB',type:'Kettlebell'},{name:'35 lb KB ×2',type:'Kettlebell'},
   {name:'53 lb KB ×2',type:'Kettlebell'},{name:'70 lb KB',type:'Kettlebell'},
-  {name:'25 lb DB pair',type:'Dumbbell'},{name:'35 lb DB pair',type:'Dumbbell'},
+  {name:'15 lb DB pair',type:'Dumbbell'},{name:'20 lb DB pair',type:'Dumbbell'},{name:'25 lb DB pair',type:'Dumbbell'},
+  {name:'35 lb DB pair',type:'Dumbbell'},{name:'40 lb DB pair',type:'Dumbbell'},
   {name:'50 lb DB pair',type:'Dumbbell'},{name:'70 lb DB pair',type:'Dumbbell'},
-  {name:'Barbell + plates',type:'Barbell'},{name:'Push/pull sled',type:'Sled'},
-  {name:'Harness',type:'Sled'},{name:'Pull-up bar',type:'Other'},{name:'Dip station',type:'Other'},
+  {name:'Adjustable DBs (up to ~100 lb each)',type:'Dumbbell'},
+  {name:'Barbell + 400+ lb bumper plates',type:'Barbell'},{name:'Trap bar',type:'Barbell'},
+  {name:'Push/pull sled',type:'Sled'},{name:'Harness',type:'Sled'},
+  {name:"Farmer's carry bars",type:'Other'},{name:'Weight vest',type:'Other'},
+  {name:'Pull-up bar',type:'Other'},{name:'Dip station',type:'Other'},
+  {name:'Mikolo LAT/pulley system',type:'Cable'},{name:'Foam roller',type:'Other'},{name:'Lacrosse balls',type:'Other'},
 ];
 
 const POOL = {
@@ -510,8 +515,11 @@ const POOL = {
   shoulder_acc:[
     {n:'DB lateral raise',b:'Banded lateral raise',bl:'20 lb',f:'DB lateral raise',fl:'15 lb each'},
     {n:'KB lateral raise',b:'Banded lateral raise',bl:'20 lb',f:'KB lateral raise',fl:'10 lb each'},
+    {n:'Cable lateral raise',b:'Banded lateral raise',bl:'20 lb',f:'Cable lateral raise',fl:'10 lb/side'},
     {n:'DB front raise',b:'Banded front raise',bl:'20 lb',f:'DB front raise',fl:'20 lb each'},
+    {n:'Cable front raise',b:'Banded front raise',bl:'20 lb',f:'Cable front raise',fl:'15 lb'},
     {n:'DB upright row',b:'Banded upright row',bl:'30 lb',f:'DB upright row',fl:'25 lb each'},
+    {n:'Cable upright row',b:'Banded upright row',bl:'30 lb',f:'Cable upright row',fl:'25 lb'},
     {n:'KB upright row',b:'Banded upright row',bl:'30 lb',f:'KB upright row',fl:'35 lb each'},
     {n:'DB 3-way raise',b:'Banded 3-way raise',bl:'20 lb',f:'DB 3-way raise',fl:'12 lb each'},
     {n:'Band pull-apart',b:'Band pull-apart',bl:'20 lb',f:'Band pull-apart',fl:'20 lb'},
@@ -523,13 +531,16 @@ const POOL = {
     {n:'Barbell overhead ext',b:'Banded overhead ext',bl:'100 lb',f:'Barbell overhead ext',fl:'55 lb'},
     {n:'DB overhead ext',b:'Banded overhead ext',bl:'90 lb',f:'DB overhead ext',fl:'50 lb'},
     {n:'KB overhead ext',b:'Banded overhead ext',bl:'90 lb',f:'KB overhead ext',fl:'35 lb'},
+    {n:'Cable overhead ext',b:'Banded overhead ext',bl:'90 lb',f:'Cable overhead ext (rope)',fl:'30 lb'},
+    {n:'Cable pushdown (rope)',b:'Band pushdown',bl:'50 lb',f:'Cable pushdown (rope)',fl:'35 lb'},
+    {n:'Cable pushdown (bar)',b:'Band pushdown',bl:'50 lb',f:'Cable pushdown (bar)',fl:'40 lb'},
+    {n:'Cable single-arm pushdown',b:'Band single-arm pushdown',bl:'30 lb',f:'Cable single-arm pushdown',fl:'20 lb'},
     {n:'DB skull crusher',b:'Banded skull crusher',bl:'80 lb',f:'DB skull crusher',fl:'30 lb each'},
     {n:'DB tate press',b:'Banded tate press',bl:'60 lb',f:'DB tate press',fl:'25 lb each'},
     {n:'DB kickback',b:'Banded kickback',bl:'30 lb',f:'DB kickback',fl:'25 lb each'},
-    {n:'KB kickback',b:'Banded kickback',bl:'30 lb',f:'KB kickback',fl:'25 lb'},
+    {n:'Cable kickback',b:'Banded kickback',bl:'30 lb',f:'Cable kickback',fl:'15 lb'},
     {n:'Diamond push-up',b:'Banded diamond push-up',bl:'40 lb',f:'Weighted diamond push-up',fl:'+25 lb'},
     {n:'Dip weighted',b:'Banded dip',bl:'80 lb',f:'Weighted dip',fl:'+25 lb'},
-    {n:'Band pushdown',b:'Band pushdown',bl:'50 lb',f:'Band pushdown',fl:'50 lb'},
     {n:'KB floor skull crusher',b:'Banded skull crusher',bl:'70 lb',f:'KB floor skull crusher',fl:'35 lb each'},
   ],
   vertical_pull:[
@@ -538,7 +549,10 @@ const POOL = {
     {n:'Neutral-grip pull-up',b:'Banded lat pulldown',bl:'140 lb',f:'Neutral-grip pull-up',fl:'BW'},
     {n:'Wide-grip pull-up',b:'Banded lat pulldown',bl:'150 lb',f:'Wide-grip pull-up',fl:'BW'},
     {n:'Weighted pull-up',b:'Banded lat pulldown',bl:'150 lb',f:'Weighted pull-up',fl:'BW +10 lb'},
-    {n:'Straight-arm pulldown',b:'Band pulldown',bl:'50 lb',f:'Band straight-arm pulldown',fl:'50 lb'},
+    {n:'Cable lat pulldown (bar)',b:'Banded lat pulldown',bl:'150 lb',f:'Cable lat pulldown (bar)',fl:'45 lb'},
+    {n:'Cable lat pulldown (rope)',b:'Banded lat pulldown',bl:'140 lb',f:'Cable lat pulldown (rope)',fl:'40 lb'},
+    {n:'Cable single-arm pulldown',b:'Band single-arm pulldown',bl:'50 lb',f:'Cable single-arm pulldown',fl:'25 lb'},
+    {n:'Cable straight-arm pulldown',b:'Band pulldown',bl:'50 lb',f:'Cable straight-arm pulldown',fl:'25 lb'},
     {n:'KB pullover',b:'Banded pullover',bl:'60 lb',f:'KB pullover',fl:'53 lb'},
     {n:'DB pullover',b:'Banded pullover',bl:'60 lb',f:'DB pullover',fl:'50 lb'},
     {n:'Band lat prayer',b:'Band lat prayer',bl:'40 lb',f:'Band lat prayer',fl:'40 lb'},
@@ -546,6 +560,8 @@ const POOL = {
   horizontal_pull:[
     {n:'KB single-arm row',b:'Banded row',bl:'240 lb',f:'KB single-arm row',fl:'70 lb'},
     {n:'DB single-arm row',b:'Banded row',bl:'230 lb',f:'DB single-arm row',fl:'70 lb'},
+    {n:'Cable seated row',b:'Banded seated row',bl:'200 lb',f:'Cable seated row',fl:'40 lb'},
+    {n:'Cable single-arm row',b:'Banded row',bl:'200 lb',f:'Cable single-arm row',fl:'30 lb'},
     {n:'Barbell bent-over row',b:'Banded row',bl:'240 lb',f:'Barbell bent-over row',fl:'135 lb'},
     {n:'Barbell pendlay row',b:'Banded row',bl:'230 lb',f:'Barbell pendlay row',fl:'125 lb'},
     {n:'DB chest-supported row',b:'Banded row',bl:'220 lb',f:'DB chest-supported row',fl:'50 lb each'},
@@ -555,12 +571,12 @@ const POOL = {
     {n:'KB renegade row',b:'Banded row',bl:'160 lb',f:'KB renegade row',fl:'35 lb each'},
     {n:'Inverted row',b:'Banded row',bl:'150 lb',f:'Inverted row (bar)',fl:'BW'},
     {n:'Landmine row',b:'Banded row',bl:'200 lb',f:'Landmine row',fl:'70 lb'},
-    {n:'Band seated row',b:'Banded seated row',bl:'200 lb',f:'Band seated row',fl:'200 lb'},
   ],
   rear_delt:[
     {n:'DB rear delt fly',b:'Banded rear delt fly',bl:'20 lb',f:'DB rear delt fly',fl:'15 lb each'},
     {n:'KB rear delt fly',b:'Banded rear delt fly',bl:'20 lb',f:'KB rear delt fly',fl:'10 lb each'},
-    {n:'Face pull',b:'Banded face pull',bl:'50 lb',f:'Banded face pull',fl:'50 lb'},
+    {n:'Cable rear delt fly',b:'Banded rear delt fly',bl:'20 lb',f:'Cable rear delt fly (cross)',fl:'10 lb/side'},
+    {n:'Face pull',b:'Banded face pull',bl:'50 lb',f:'Cable face pull (rope)',fl:'20 lb'},
     {n:'DB prone Y-raise',b:'Banded rear delt',bl:'20 lb',f:'DB prone Y-raise',fl:'10 lb each'},
     {n:'KB batwing row',b:'Banded batwing row',bl:'30 lb',f:'KB batwing row',fl:'25 lb each'},
     {n:'Band pull-apart',b:'Band pull-apart',bl:'20 lb',f:'Band pull-apart',fl:'20 lb'},
@@ -573,6 +589,10 @@ const POOL = {
     {n:'DB incline curl',b:'Banded incline curl',bl:'90 lb',f:'DB incline curl',fl:'25 lb each'},
     {n:'DB hammer curl',b:'Banded hammer curl',bl:'80 lb',f:'DB hammer curl',fl:'35 lb each'},
     {n:'DB cross-body hammer',b:'Banded cross-body curl',bl:'80 lb',f:'DB cross-body hammer',fl:'30 lb each'},
+    {n:'Cable curl (bar)',b:'Banded curl',bl:'90 lb',f:'Cable curl (bar)',fl:'30 lb'},
+    {n:'Cable curl (rope)',b:'Banded curl',bl:'80 lb',f:'Cable curl (rope)',fl:'25 lb'},
+    {n:'Cable single-arm curl',b:'Banded curl',bl:'70 lb',f:'Cable single-arm curl',fl:'15 lb'},
+    {n:'Cable hammer curl',b:'Banded hammer curl',bl:'80 lb',f:'Cable hammer curl (rope)',fl:'25 lb'},
     {n:'KB curl',b:'Banded curl',bl:'90 lb',f:'KB curl',fl:'35 lb each'},
     {n:'DB concentration curl',b:'Banded concentration curl',bl:'70 lb',f:'DB concentration curl',fl:'30 lb'},
     {n:'DB spider curl',b:'Banded spider curl',bl:'80 lb',f:'DB spider curl',fl:'25 lb each'},
@@ -1078,6 +1098,57 @@ function generateLocalWeek(targetWeek, fromWeek, perf, notes, parsedSignals){
     }
   }
 
+  // ACCESSORY AUTO-ROTATION — swap 1-2 non-primary accessory moves per day
+  // Primaries are never touched. Only accessories (tricep, bicep, rear_delt, shoulder_acc, chest_acc)
+  const ACCESSORY_CATS = {
+    tricep: POOL.tricep,
+    bicep: POOL.bicep,
+    rear_delt: POOL.rear_delt,
+    shoulder_acc: POOL.shoulder_acc,
+    chest_acc: POOL.chest_acc,
+  };
+
+  // Map movement names to their pool category for lookup
+  function guessCategory(moveName){
+    const n = moveName.toLowerCase();
+    if(/curl|bicep|zottman|hammer curl|preacher|spider curl|drag curl|21s/.test(n)) return 'bicep';
+    if(/pushdown|skull|overhead ext|kickback|dip|tate|diamond/.test(n)) return 'tricep';
+    if(/rear delt|face pull|batwing|prone y|halo|pull-apart/.test(n)) return 'rear_delt';
+    if(/lateral raise|front raise|upright row|cuban|ytw|bottoms-up/.test(n)) return 'shoulder_acc';
+    if(/fly|pullover|svend|cross-body fly/.test(n)) return 'chest_acc';
+    return null;
+  }
+
+  base.forEach(day => {
+    let swapsLeft = 2; // max 2 accessory swaps per day
+    day.moves.forEach(m => {
+      if(swapsLeft <= 0) return;
+      if(isNonProgressing(m.n)) return;
+      if(isPrimaryMove(m.n)) return; // never touch primaries
+
+      const cat = guessCategory(m.n);
+      if(!cat) return;
+
+      // Only rotate every other week on average — use week parity + movement index as seed
+      const weekNum = parseInt(targetWeek);
+      const moveHash = m.n.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+      if((weekNum + moveHash) % 3 !== 0) return; // roughly 1-in-3 chance per eligible move
+
+      const pool = ACCESSORY_CATS[cat] || [];
+      const alt = pool.filter(p => p.n !== m.n);
+      if(!alt.length) return;
+
+      const pick = alt[Math.floor((weekNum * moveHash) % alt.length)]; // deterministic, not random
+      // Preserve progression: carry over the current load values, just swap the movement name/instrument
+      m.n = pick.n;
+      m.f = pick.f;
+      m.fl = pick.fl;
+      m.b = pick.b;
+      m.bl = pick.bl;
+      swapsLeft--;
+    });
+  });
+
   return base;
 }
 
@@ -1513,12 +1584,63 @@ function generateBWWeek(){
     });
   });
 
+  // BW ACCESSORY ROTATION — swap 1 accessory per day keeping core movements locked
+  const BW_CORE_MOVES = ['dead bug','plank','hollow','side plank','bicycle','bear crawl','pull-up','chin-up','glute bridge','calf raise'];
+  const isBWCore = n => BW_CORE_MOVES.some(k=>n.toLowerCase().includes(k));
+
+  const BW_ALT_POOL = {
+    push:[
+      {n:'Push-up (tempo 3-1-1)',sets:3,reps:'8–12',cue:'3s down, 1s pause at chest, 1s up. Controlled.'},
+      {n:'Archer push-up',sets:3,reps:'6/side',cue:'One arm wide, one arm tucked. Shift weight laterally.'},
+      {n:'Decline push-up',sets:3,reps:'8–10',cue:'Feet elevated. Upper chest emphasis.'},
+      {n:'Push-up with rotation',sets:3,reps:'8/side',cue:'Push up, rotate to side plank. Full body.'},
+      {n:'Close-grip push-up',sets:3,reps:'10–12',cue:'Hands close, elbows tucked. Tricep focus.'},
+      {n:'Pike push-up',sets:3,reps:'8–10',cue:'Hips high. Overhead pressing pattern BW style.'},
+    ],
+    pull:[
+      {n:'Inverted row (table)',sets:3,reps:'10–12',cue:'Body straight as a plank. Pull chest to surface.'},
+      {n:'Towel row (door anchor)',sets:3,reps:'10–15',cue:'Loop towel around door handle. Row your bodyweight.'},
+      {n:'Superman with hold',sets:3,reps:'10 × 3s',cue:'Lying prone. Lift everything, hold 3s. Posterior chain.'},
+      {n:'Band pull-apart',sets:3,reps:'15–20',cue:'Light band. Arms straight. Squeeze shoulder blades.'},
+      {n:'Resistance band row',sets:3,reps:'12–15',cue:'Step on band. Row elbows back. Squeeze at end range.'},
+    ],
+    legs:[
+      {n:'Jump squat',sets:3,reps:'10',cue:'Squat, explode up. Land soft. Power development.'},
+      {n:'Wall sit',sets:3,reps:'30–45s',cue:'90° knee angle. Accumulate time. Joint load tolerance.'},
+      {n:'Step-up (BW)',sets:3,reps:'10/leg',cue:'Box or stair. Full hip extension at top.'},
+      {n:'Walking lunge',sets:3,reps:'10/leg',cue:'Continuous motion. Upright torso.'},
+      {n:'Sumo squat pulse',sets:3,reps:'20',cue:'Wide stance, toes out. Pulse at bottom. Glute/adductor.'},
+      {n:'Nordic curl (eccentric)',sets:3,reps:'5',cue:'Knees anchored. Lower slowly. Hamstring strength.'},
+    ],
+    core:[
+      {n:'Ab wheel rollout',sets:3,reps:'8–10',cue:'Kneel, roll out slowly. Back flat. Anti-extension.'},
+      {n:'L-sit hold (floor)',sets:3,reps:'10–20s',cue:'Hands on floor, legs straight out. Core compression.'},
+      {n:'Windshield wiper (bent knee)',sets:3,reps:'10/side',cue:'Lying on back, knees to 90°. Rotate side to side.'},
+      {n:'Reverse crunch',sets:3,reps:'15',cue:'Curl hips to ribs. Slow lower. Lower abs.'},
+      {n:'Stir the pot plank',sets:3,reps:'10/direction',cue:'Elbows on floor or stability ball. Circle elbows.'},
+    ],
+  };
+
+  const dayCats = ['push','pull','legs','core'];
+  newDays.forEach((day,di)=>{
+    const cat = dayCats[di];
+    const pool = BW_ALT_POOL[cat]||[];
+    if(!pool.length) return;
+    // Find first non-core accessory exercise and maybe rotate it
+    const idx = day.exercises.findIndex(e=>!isBWCore(e.n));
+    if(idx === -1) return;
+    // Rotate every 2 weeks using deterministic seed
+    if((nextWeek + di) % 2 !== 0) return;
+    const alt = pool[(nextWeek + di) % pool.length];
+    day.exercises[idx] = {...alt};
+  });
+
   TV_ST.bwDays = newDays;
   TV_ST.bwWeek = nextWeek;
   TV_ST.bwDayIdx = 0;
   saveTVState();
   renderBWDay();
-  document.getElementById('bw-gen-result').innerHTML = `<div style="padding:10px 16px;font-size:12px;font-family:var(--font-mono);color:var(--mid);">Week ${nextWeek} generated ✓ — reps bumped, program tab updated.</div>`;
+  document.getElementById('bw-gen-result').innerHTML = `<div style="padding:10px 16px;font-size:12px;font-family:var(--font-mono);color:var(--mid);">Week ${nextWeek} generated ✓ — reps bumped, 1 accessory rotated per day.</div>`;
   setTimeout(()=>document.getElementById('bw-gen-result').innerHTML='', 3000);
 }
 
