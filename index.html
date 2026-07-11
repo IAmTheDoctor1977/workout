@@ -73,9 +73,6 @@ html, body { height: 100%; overflow: hidden; background: var(--paper); color: va
 .load-b { color: var(--accent); font-family: var(--font-mono); font-size: 11px; }
 .load-f { color: #3b82f6; font-family: var(--font-mono); font-size: 11px; }
 .num-cell { text-align: center; font-family: var(--font-mono); font-size: 12px; }
-.log-input { width: 100%; padding: 4px 5px; background: var(--surface); border: 0.5px solid var(--rule); border-radius: 5px; font-size: 12px; font-family: var(--font-mono); color: var(--ink); text-align: center; -webkit-appearance: none; }
-.log-input:focus { border-color: var(--accent); outline: none; }
-.save-row-btn { width: 100%; margin-top: 8px; padding: 8px; background: var(--accent); color: white; border: none; border-radius: 6px; font-size: 12px; font-family: var(--font-body); font-weight: 500; cursor: pointer; }
 
 /* WARMUP */
 .warmup-strip { margin: 10px 16px 0; background: var(--surface); border-radius: var(--r); padding: 10px 12px; }
@@ -230,8 +227,8 @@ textarea { min-height: 80px; resize: vertical; }
       <div class="screen-header"><div class="screen-title">GENERATE <span>WEEK</span></div></div>
       <div class="card">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div class="form-group" style="margin:0"><label class="form-label">Generating week</label><input type="number" id="gen-week" value="20" min="1"></div>
-          <div class="form-group" style="margin:0"><label class="form-label">Based on week</label><input type="number" id="gen-from" value="19" min="1"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Generating week</label><input type="number" id="gen-week" value="2" min="1"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Based on week</label><input type="number" id="gen-from" value="1" min="1"></div>
         </div>
         <div class="form-group" style="margin-top:10px"><label class="form-label">Performance last week</label>
           <select id="gen-perf">
@@ -250,7 +247,7 @@ textarea { min-height: 80px; resize: vertical; }
       <div class="card">
         <p style="font-size:12px;color:var(--mid);margin-bottom:10px;">Roll back the program to a known-good week. This resets loads in the Program tab — your log history is preserved.</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-          <div><label class="form-label">Reset to week</label><input type="number" id="reset-week" value="19" min="1"></div>
+          <div><label class="form-label">Reset to week</label><input type="number" id="reset-week" value="1" min="1"></div>
           <div style="display:flex;align-items:flex-end;"><button class="btn btn-ghost" style="width:100%" onclick="resetToCheckpoint()">Reset ↺</button></div>
         </div>
         <div id="reset-result" style="font-size:12px;color:var(--mid);margin-top:4px;font-family:var(--font-mono);"></div>
@@ -383,15 +380,15 @@ textarea { min-height: 80px; resize: vertical; }
 <script>
 // CHECKPOINTS — named baseline weeks to reset to
 const CHECKPOINTS = {
-  19: [
+  1: [
     { label:'Upper A — Push', type:'upper',
       warmup:'2 min cardio · Arm circles 30s each · Band pull-apart 2×15 · Wall slide 2×10 · Push-up 2×10 slow · DB ramp-up: 50% ×5 → 75% ×3',
       moves:[
         {n:'Banded chest press',b:'220 lb',f:'DB bench press',fl:'75 lb each',sets:4,reps:'8'},
         {n:'Shoulder press',b:'115 lb',f:'DB shoulder press',fl:'40 lb each',sets:4,reps:'8'},
-        {n:'Chest fly',b:'55 lb',f:'DB fly',fl:'25 lb each',sets:4,reps:'16'},
-        {n:'Lateral raise',b:'25 lb',f:'DB lateral raise',fl:'20 lb each',sets:4,reps:'22'},
-        {n:'Tricep overhead ext',b:'105 lb',f:'Barbell overhead ext',fl:'60 lb',sets:3,reps:'12'},
+        {n:'Cable chest fly',b:'55 lb',f:'Cable chest fly',fl:'15 lb/side',sets:4,reps:'16'},
+        {n:'Cable lateral raise',b:'25 lb',f:'Cable lateral raise',fl:'10 lb/side',sets:4,reps:'22'},
+        {n:'Cable pushdown (rope)',b:'105 lb',f:'Cable pushdown (rope)',fl:'35 lb',sets:3,reps:'12'},
         {n:'Side core rotation',b:'70 lb',f:'Side core rotation',fl:'70 lb',sets:3,reps:'10/side',sec:'Core'},
         {n:'Sled push',b:'—',f:'3 × 20 yd moderate',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
       ]},
@@ -401,19 +398,19 @@ const CHECKPOINTS = {
         {n:'Sled harness sprint',b:'—',f:'4 × 15 yd light',fl:'',sets:4,reps:'15 yd',sec:'Sled primer'},
         {n:'Banded deadlift',b:'305 lb',f:'Barbell deadlift',fl:'280 lb',sets:4,reps:'10'},
         {n:'Romanian deadlift',b:'195 lb',f:'Barbell RDL',fl:'210 lb',sets:4,reps:'10'},
-        {n:'Hamstring curl',b:'70 lb',f:'Banded leg curl',fl:'70 lb',sets:3,reps:'18'},
+        {n:'Cable leg curl',b:'70 lb',f:'Cable leg curl (ankle)',fl:'25 lb',sets:3,reps:'18'},
         {n:'Hip thrusts / KB swing',b:'BW × 32',f:'KB swing',fl:'53 lb × 24',sets:4,reps:'see loads'},
       ]},
     { label:'Upper B — Pull', type:'upper',
       warmup:'2 min cardio · Band pull-apart 2×15 · Face pull light band 2×15 · Scapular pull-up 2×8 · Prone Y-T-W 1×8 · Dead hang 2×20–30s',
       moves:[
-        {n:'Lat pulldown',b:'155 lb',f:'Pull-up',fl:'BW +5 lb',sets:4,reps:'10'},
-        {n:'Banded row',b:'245 lb',f:'KB single-arm row',fl:'70 lb each',sets:4,reps:'10'},
-        {n:'Face pull',b:'55 lb',f:'Banded face pull',fl:'55 lb',sets:4,reps:'22'},
-        {n:'Rear delt fly',b:'20 lb',f:'DB rear delt fly',fl:'15 lb each',sets:3,reps:'20'},
-        {n:'Strict bicep curl',b:'105 lb',f:'Barbell curl',fl:'60 lb',sets:3,reps:'14'},
-        {n:'Incline curl',b:'95 lb',f:'DB incline curl',fl:'25 lb each',sets:4,reps:'19'},
-        {n:'Dead bug',b:'BW',f:'Dead bug',fl:'5 lb hold',sets:3,reps:'10/side',sec:'Core'},
+        {n:'Lat pulldown',b:'155 lb',f:'Cable lat pulldown (bar)',fl:'45 lb',sets:4,reps:'10'},
+        {n:'Banded row',b:'245 lb',f:'Cable seated row',fl:'40 lb',sets:4,reps:'10'},
+        {n:'Cable face pull',b:'55 lb',f:'Cable face pull (rope)',fl:'20 lb',sets:4,reps:'22'},
+        {n:'Cable rear delt fly',b:'20 lb',f:'Cable rear delt fly (cross)',fl:'10 lb/side',sets:3,reps:'20'},
+        {n:'Cable curl (bar)',b:'105 lb',f:'Cable curl (bar)',fl:'30 lb',sets:3,reps:'14'},
+        {n:'Cable single-arm curl',b:'95 lb',f:'Cable single-arm curl',fl:'15 lb',sets:4,reps:'19'},
+        {n:'Dead bug',b:'BW',f:'Dead bug',fl:'BW',sets:3,reps:'10/side',sec:'Core'},
         {n:'Sled pull',b:'—',f:'3 × 20 yd rope/harness',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
       ]},
     { label:'Olympic Day', type:'olympic',
@@ -434,15 +431,15 @@ const CHECKPOINTS = {
         {n:'Sled push + pull circuit',b:'—',f:'3 rounds 20 yd push → pull',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
         {n:'Front squat',b:'175 lb',f:'Barbell front squat',fl:'150 lb',sets:4,reps:'10'},
         {n:'Back squat',b:'175 lb',f:'Barbell back squat',fl:'190 lb',sets:4,reps:'10'},
-        {n:'Quad extension / step-up',b:'95 lb',f:'DB step-up',fl:'30 lb each',sets:4,reps:'19'},
+        {n:'Cable straight-arm pulldown',b:'95 lb',f:'Cable straight-arm pulldown',fl:'25 lb',sets:4,reps:'19'},
         {n:'Reverse lunge',b:'BW × 20/leg',f:'KB reverse lunge',fl:'35 lb each × 17/leg',sets:4,reps:'see loads'},
         {n:'Calf raises',b:'BW × 38',f:'Standing calf raise',fl:'45 lb plate × 36',sets:4,reps:'see loads'},
         {n:"KB farmer's carry",b:'—',f:'Farmer carry bars',fl:'53 lb each',sets:3,reps:'40 yd',sec:'Carry'},
       ]},
   ]
 };
-// Current baseline is W19
-const W17 = CHECKPOINTS[19];
+// Baseline is Week 1 (at current loads)
+const W17 = CHECKPOINTS[1];
 
 const SEED_LOGS = [
   {week:10,day:'Day 1 — Upper A (Push)',result:'mixed',notes:'Chest press reduced to 210 lb 5×10. Shoulder press failed set 4 and 5 at 7 reps (110 lb).',date:'Week 10'},
@@ -749,7 +746,7 @@ function buildRandDay(tmpl){
 }
 
 let ST = {
-  week:19, progDay:0, randDay:0,
+  week:1, progDay:0, randDay:0,
   program: JSON.parse(JSON.stringify(W17)),
   logs:[...SEED_LOGS],
   eq:[...DEFAULT_EQ],
@@ -778,57 +775,19 @@ function capSets(s){ return Math.min(4, parseInt(s)||4); }
 function renderProgDay(i){
   const day=ST.program[i];
   document.getElementById('prog-warmup').textContent=day.warmup;
-  let html='<thead><tr><th style="width:32%">Movement</th><th style="width:14%">Band</th><th style="width:16%">Free weight</th><th style="width:11%;text-align:center">Sets</th><th style="width:13%;text-align:center">Reps</th><th style="width:14%;text-align:center">Actual</th></tr></thead><tbody>';
+  let html='<thead><tr><th style="width:38%">Movement</th><th style="width:17%">Band</th><th style="width:18%">Free weight / Cable</th><th style="width:8%;text-align:center">Sets</th><th style="width:19%;text-align:center">Reps</th></tr></thead><tbody>';
   let lastSec=null;
-  day.moves.forEach((m,mi)=>{
-    if(m.sec!==lastSec){if(m.sec)html+=`<tr class="sec-row"><td colspan="6">${m.sec}</td></tr>`;lastSec=m.sec||null;}
+  day.moves.forEach(m=>{
+    if(m.sec!==lastSec){if(m.sec)html+=`<tr class="sec-row"><td colspan="5">${m.sec}</td></tr>`;lastSec=m.sec||null;}
     const bc=m.b&&m.b!=='—'?`<span class="load-b">${m.b}</span>`:'<span style="color:var(--mid)">—</span>';
     let fc='';
-    if(m.f&&m.f!=='—')fc+=`<span style="font-size:11px">${m.f}</span>`;
+    if(m.f&&m.f!=='—')fc+=`<span style="font-size:12px">${m.f}</span>`;
     if(m.fl)fc+=`${m.f&&m.f!=='—'?'<br>':''}<span class="load-f">${m.fl}</span>`;
     if(!fc)fc='<span style="color:var(--mid)">—</span>';
-    const sets=capSets(m.sets);
-    const actualLoad=m.logLoad||m.fl||'';
-    const actualReps=m.logReps||m.reps||'';
-    const actualSets=m.logSets||sets;
-    html+=`<tr>
-      <td><div class="ex-name">${m.n}</div></td>
-      <td>${bc}</td>
-      <td>${fc}</td>
-      <td class="num-cell">${sets}</td>
-      <td class="num-cell">${m.reps}</td>
-      <td>
-        <input class="log-input" style="margin-bottom:3px" type="text" placeholder="load" value="${actualLoad}" onchange="updateProgLog(${i},${mi},'logLoad',this.value)">
-        <input class="log-input" style="margin-bottom:3px" type="text" placeholder="reps" value="${actualReps}" onchange="updateProgLog(${i},${mi},'logReps',this.value)">
-        <input class="log-input" type="number" placeholder="sets" value="${actualSets}" min="1" max="4" onchange="updateProgLog(${i},${mi},'logSets',this.value)">
-      </td>
-    </tr>`;
+    html+=`<tr><td><div class="ex-name">${m.n}</div></td><td>${bc}</td><td>${fc}</td><td class="num-cell">${capSets(m.sets)}</td><td class="num-cell">${m.reps}</td></tr>`;
   });
   html+='</tbody>';
-  html+=`<tfoot><tr><td colspan="6"><button class="save-row-btn" onclick="saveProgDayLog(${i})">Save Day ${i+1} log ✓</button></td></tr></tfoot>`;
   document.getElementById('prog-table').innerHTML=html;
-}
-
-function updateProgLog(dayIdx, moveIdx, field, value){
-  if(!ST.program[dayIdx] || !ST.program[dayIdx].moves[moveIdx]) return;
-  ST.program[dayIdx].moves[moveIdx][field] = value;
-}
-
-function saveProgDayLog(dayIdx){
-  const day = ST.program[dayIdx];
-  const notes = day.moves.map(m=>{
-    const parts=[];
-    if(m.logLoad) parts.push(m.logLoad);
-    if(m.logReps) parts.push(m.logReps+' reps');
-    if(m.logSets) parts.push(m.logSets+' sets');
-    return parts.length ? `${m.n}: ${parts.join(', ')}` : null;
-  }).filter(Boolean).join(' · ');
-  const entry={week:ST.week, day:`Day ${dayIdx+1} — ${day.label}`, result:'hit', notes, date:new Date().toLocaleDateString()};
-  ST.logs.unshift(entry);
-  saveState();
-  // brief flash confirmation
-  const btn = document.querySelector(`#prog-table tfoot button`);
-  if(btn){ btn.textContent='Saved ✓'; btn.style.background='#3a7d3a'; setTimeout(()=>{ btn.textContent=`Save Day ${dayIdx+1} log ✓`; btn.style.background=''; },2000); }
 }
 
 // LOG
@@ -1426,35 +1385,35 @@ const BW_PROGRAM = {
       exercises:[
         {n:'Push-up', sets:3, reps:'10–15', cue:'Hands shoulder-width. Full range. Squeeze chest at top.'},
         {n:'Pike push-up', sets:3, reps:'8–10', cue:'Hips high, head between arms. Overhead pressing pattern.'},
-        {n:'Diamond push-up', sets:3, reps:'8–10', cue:'Hands close together. Elbows stay tight to body. Tricep focus.'},
-        {n:'Tricep dip (chair/bench)', sets:3, reps:'12–15', cue:'Hands behind on a stable surface. Keep hips close. Don\'t shrug.'},
-        {n:'Decline push-up', sets:2, reps:'8–10', cue:'Feet elevated. Upper chest emphasis.'},
+        {n:'Diamond push-up', sets:3, reps:'8–10', cue:'Hands close, elbows tight. Tricep focus.'},
+        {n:'Tricep dip (chair/bench)', sets:3, reps:'12–15', cue:'Hands on stable surface behind you. Hips close. Lower slow.'},
+        {n:'Decline push-up', sets:2, reps:'8–10', cue:'Feet elevated on chair or couch. Upper chest emphasis.'},
       ]},
     { label:'Pull', focus:'Back · Biceps · Rear Delt',
       exercises:[
-        {n:'Pull-up / chin-up', sets:3, reps:'5–10', cue:'Dead hang start. Full range. Chest to bar if possible.'},
-        {n:'Inverted row (table/bar)', sets:3, reps:'10–15', cue:'Body straight as a plank. Pull chest to bar. Retract scapulae first.'},
-        {n:'Towel/band bicep curl', sets:3, reps:'12–15', cue:'Step on band or loop towel around a door handle. Curl slow.'},
-        {n:'Superman hold', sets:3, reps:'10 × 3s hold', cue:'Lying prone. Lift arms and legs. Squeeze glutes. Lower back and posterior chain.'},
-        {n:'Band face pull (or band pull-apart)', sets:3, reps:'15', cue:'Shoulder health staple. Light band. Pull to face, elbows high.'},
+        {n:'Pull-up / chin-up', sets:3, reps:'5–10', cue:'Dead hang start. Full range. Chest toward bar.'},
+        {n:'Inverted row (table/bar)', sets:3, reps:'10–15', cue:'Body straight as a plank. Pull chest to surface. Retract scapulae first.'},
+        {n:'Towel bicep curl (door)', sets:3, reps:'12–15', cue:'Loop towel around door handle. Sit back into it. Curl slow and controlled.'},
+        {n:'Superman hold', sets:3, reps:'10 × 3s', cue:'Lying prone. Lift arms and legs simultaneously. Squeeze glutes. Hold 3s.'},
+        {n:'Prone Y-raise', sets:3, reps:'12', cue:'Lying face down. Arms in Y position. Lift and lower slow. Rear delt.'},
       ]},
     { label:'Legs', focus:'Quads · Glutes · Hamstrings',
       exercises:[
-        {n:'BW squat', sets:3, reps:'15–20', cue:'Full depth. Knees track toes. Chest up.'},
+        {n:'BW squat', sets:3, reps:'15–20', cue:'Full depth. Knees track toes. Chest up. Pause at bottom.'},
         {n:'Reverse lunge', sets:3, reps:'10/leg', cue:'Step back, knee to 90°. Upright torso. Deceleration focus.'},
-        {n:'Glute bridge', sets:3, reps:'15 × 2s hold', cue:'Upper back on floor. Drive hips up. Squeeze at top.'},
+        {n:'Glute bridge', sets:3, reps:'15 × 2s hold', cue:'Upper back on floor. Drive hips up. Posterior pelvic tilt at top.'},
         {n:'Single-leg RDL (BW)', sets:3, reps:'8/leg', cue:'Hip hinge on one leg. Feel the hamstring load. Control the balance.'},
-        {n:'Lateral lunge', sets:3, reps:'8/leg', cue:'Wide step sideways. Sit into the hip. Keep the straight leg straight.'},
-        {n:'Calf raise (single leg)', sets:3, reps:'15/leg', cue:'Use wall for balance. Full range. Pause at top.'},
+        {n:'Lateral lunge', sets:3, reps:'8/leg', cue:'Wide step sideways. Sit into the hip. Straight leg stays straight.'},
+        {n:'Calf raise (single leg)', sets:3, reps:'15/leg', cue:'Wall for balance. Full range. Pause at top.'},
       ]},
-    { label:'Core + Carry', focus:'Anti-extension · Rotation · Stability',
+    { label:'Core', focus:'Anti-extension · Rotation · Stability',
       exercises:[
-        {n:'Dead bug', sets:3, reps:'10/side', cue:'Lower back flat. Breathe out on extension. Slow.'},
+        {n:'Dead bug', sets:3, reps:'10/side', cue:'Lower back pressed flat. Breathe out on extension. Slow.'},
         {n:'Side plank', sets:3, reps:'30s/side', cue:'Elbow under shoulder. Drive hip up. Don\'t sag.'},
-        {n:'Hollow body hold', sets:3, reps:'25–35s', cue:'Press lower back to floor. Arms overhead or by sides.'},
+        {n:'Hollow body hold', sets:3, reps:'25–35s', cue:'Lower back pressed to floor. Arms overhead or by sides.'},
         {n:'Plank shoulder tap', sets:3, reps:'20 taps', cue:'Wide feet. Minimize hip rotation. Slow taps.'},
-        {n:'Bear crawl', sets:3, reps:'10 steps fwd+back', cue:'Knees 1" off floor. Opposite hand/foot. Keep hips level.'},
-        {n:'Standing band chop (or slow twist)', sets:3, reps:'10/side', cue:'Rotate from the torso. Light resistance or bodyweight. Controlled.'},
+        {n:'Bear crawl', sets:3, reps:'10 steps fwd+back', cue:'Knees 1" off floor. Opposite hand/foot. Hips level.'},
+        {n:'Slow standing twist', sets:3, reps:'10/side', cue:'Arms out, rotate from the torso. Slow and controlled. No momentum.'},
       ]},
   ]
 };
@@ -1590,34 +1549,33 @@ function generateBWWeek(){
 
   const BW_ALT_POOL = {
     push:[
-      {n:'Push-up (tempo 3-1-1)',sets:3,reps:'8–12',cue:'3s down, 1s pause at chest, 1s up. Controlled.'},
-      {n:'Archer push-up',sets:3,reps:'6/side',cue:'One arm wide, one arm tucked. Shift weight laterally.'},
-      {n:'Decline push-up',sets:3,reps:'8–10',cue:'Feet elevated. Upper chest emphasis.'},
-      {n:'Push-up with rotation',sets:3,reps:'8/side',cue:'Push up, rotate to side plank. Full body.'},
-      {n:'Close-grip push-up',sets:3,reps:'10–12',cue:'Hands close, elbows tucked. Tricep focus.'},
-      {n:'Pike push-up',sets:3,reps:'8–10',cue:'Hips high. Overhead pressing pattern BW style.'},
+      {n:'Push-up (tempo 3-1-1)',sets:3,reps:'8–12',cue:'3s down, 1s pause, 1s up. Controlled eccentric.'},
+      {n:'Archer push-up',sets:3,reps:'6/side',cue:'One arm wide, one tucked. Shift weight laterally each rep.'},
+      {n:'Push-up with rotation',sets:3,reps:'8/side',cue:'Push up, rotate to side plank. Full body integration.'},
+      {n:'Close-grip push-up',sets:3,reps:'10–12',cue:'Hands close, elbows tucked. Tricep emphasis.'},
+      {n:'Elevated pike push-up',sets:3,reps:'8–10',cue:'Feet on chair, hips high. Shoulder press pattern.'},
     ],
     pull:[
-      {n:'Inverted row (table)',sets:3,reps:'10–12',cue:'Body straight as a plank. Pull chest to surface.'},
-      {n:'Towel row (door anchor)',sets:3,reps:'10–15',cue:'Loop towel around door handle. Row your bodyweight.'},
-      {n:'Superman with hold',sets:3,reps:'10 × 3s',cue:'Lying prone. Lift everything, hold 3s. Posterior chain.'},
-      {n:'Band pull-apart',sets:3,reps:'15–20',cue:'Light band. Arms straight. Squeeze shoulder blades.'},
-      {n:'Resistance band row',sets:3,reps:'12–15',cue:'Step on band. Row elbows back. Squeeze at end range.'},
+      {n:'Inverted row (narrow grip)',sets:3,reps:'10–12',cue:'Hands closer together. Bicep emphasis.'},
+      {n:'Towel row (door)',sets:3,reps:'10–15',cue:'Towel around door handle. Sit back and row your bodyweight.'},
+      {n:'Superman hold (arms wide)',sets:3,reps:'10 × 3s',cue:'Arms in Y position. Rear delt and lower trap focus.'},
+      {n:'Prone T-raise',sets:3,reps:'12',cue:'Lying face down. Arms straight out to sides. Lift and lower.'},
+      {n:'Commando pull-up',sets:3,reps:'5/side',cue:'Bar along the body, chin to one side, then other side alternating.'},
     ],
     legs:[
-      {n:'Jump squat',sets:3,reps:'10',cue:'Squat, explode up. Land soft. Power development.'},
-      {n:'Wall sit',sets:3,reps:'30–45s',cue:'90° knee angle. Accumulate time. Joint load tolerance.'},
+      {n:'Jump squat',sets:3,reps:'10',cue:'Squat, explode up. Land soft with bent knees. Power.'},
+      {n:'Wall sit',sets:3,reps:'30–45s',cue:'90° knee angle. Back flat. Accumulate time.'},
       {n:'Step-up (BW)',sets:3,reps:'10/leg',cue:'Box or stair. Full hip extension at top.'},
-      {n:'Walking lunge',sets:3,reps:'10/leg',cue:'Continuous motion. Upright torso.'},
-      {n:'Sumo squat pulse',sets:3,reps:'20',cue:'Wide stance, toes out. Pulse at bottom. Glute/adductor.'},
-      {n:'Nordic curl (eccentric)',sets:3,reps:'5',cue:'Knees anchored. Lower slowly. Hamstring strength.'},
+      {n:'Walking lunge',sets:3,reps:'10/leg',cue:'Continuous forward motion. Upright torso throughout.'},
+      {n:'Nordic curl (eccentric)',sets:3,reps:'5',cue:'Knees anchored under couch. Lower slowly. Hamstring.'},
+      {n:'Sumo squat hold',sets:3,reps:'30s',cue:'Wide stance, toes out. Sit into it. Inner thigh stretch + strength.'},
     ],
     core:[
-      {n:'Ab wheel rollout',sets:3,reps:'8–10',cue:'Kneel, roll out slowly. Back flat. Anti-extension.'},
+      {n:'Ab wheel rollout (or extended plank)',sets:3,reps:'8–10',cue:'Roll out slow, back flat. Pull back in. Anti-extension.'},
+      {n:'Windshield wiper (bent knee)',sets:3,reps:'10/side',cue:'Lying on back, knees at 90°. Rotate side to side. Control.'},
+      {n:'Reverse crunch',sets:3,reps:'15',cue:'Curl hips toward ribs. Slow lower. Lower abs.'},
+      {n:'Stir the pot (floor)',sets:3,reps:'10/direction',cue:'Elbows on floor. Circle forearms slowly. Core anti-rotation.'},
       {n:'L-sit hold (floor)',sets:3,reps:'10–20s',cue:'Hands on floor, legs straight out. Core compression.'},
-      {n:'Windshield wiper (bent knee)',sets:3,reps:'10/side',cue:'Lying on back, knees to 90°. Rotate side to side.'},
-      {n:'Reverse crunch',sets:3,reps:'15',cue:'Curl hips to ribs. Slow lower. Lower abs.'},
-      {n:'Stir the pot plank',sets:3,reps:'10/direction',cue:'Elbows on floor or stability ball. Circle elbows.'},
     ],
   };
 
