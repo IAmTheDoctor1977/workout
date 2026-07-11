@@ -386,8 +386,8 @@ const CHECKPOINTS = {
       moves:[
         {n:'Banded chest press',b:'220 lb',f:'DB bench press',fl:'75 lb each',sets:4,reps:'8'},
         {n:'Shoulder press',b:'115 lb',f:'DB shoulder press',fl:'40 lb each',sets:4,reps:'8'},
-        {n:'Cable chest fly',b:'55 lb',f:'Cable chest fly',fl:'15 lb/side',sets:4,reps:'16'},
-        {n:'Cable lateral raise',b:'25 lb',f:'Cable lateral raise',fl:'10 lb/side',sets:4,reps:'22'},
+        {n:'Chest fly',b:'55 lb',f:'DB chest fly',fl:'25 lb each',sets:4,reps:'16'},
+        {n:'Lateral raise',b:'25 lb',f:'DB lateral raise',fl:'20 lb each',sets:4,reps:'22'},
         {n:'Cable pushdown (rope)',b:'105 lb',f:'Cable pushdown (rope)',fl:'35 lb',sets:3,reps:'12'},
         {n:'Side core rotation',b:'70 lb',f:'Side core rotation',fl:'70 lb',sets:3,reps:'10/side',sec:'Core'},
         {n:'Sled push',b:'—',f:'3 × 20 yd moderate',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
@@ -407,7 +407,7 @@ const CHECKPOINTS = {
         {n:'Lat pulldown',b:'155 lb',f:'Cable lat pulldown (bar)',fl:'45 lb',sets:4,reps:'10'},
         {n:'Banded row',b:'245 lb',f:'Cable seated row',fl:'40 lb',sets:4,reps:'10'},
         {n:'Cable face pull',b:'55 lb',f:'Cable face pull (rope)',fl:'20 lb',sets:4,reps:'22'},
-        {n:'Cable rear delt fly',b:'20 lb',f:'Cable rear delt fly (cross)',fl:'10 lb/side',sets:3,reps:'20'},
+        {n:'Rear delt fly',b:'20 lb',f:'DB rear delt fly',fl:'15 lb each',sets:3,reps:'20'},
         {n:'Cable curl (bar)',b:'105 lb',f:'Cable curl (bar)',fl:'30 lb',sets:3,reps:'14'},
         {n:'Cable single-arm curl',b:'95 lb',f:'Cable single-arm curl',fl:'15 lb',sets:4,reps:'19'},
         {n:'Dead bug',b:'BW',f:'Dead bug',fl:'BW',sets:3,reps:'10/side',sec:'Core'},
@@ -441,19 +441,7 @@ const CHECKPOINTS = {
 // Baseline is Week 1 (at current loads)
 const W17 = CHECKPOINTS[1];
 
-const SEED_LOGS = [
-  {week:10,day:'Day 1 — Upper A (Push)',result:'mixed',notes:'Chest press reduced to 210 lb 5×10. Shoulder press failed set 4 and 5 at 7 reps (110 lb).',date:'Week 10'},
-  {week:11,day:'Day 1 — Upper A (Push)',result:'hit',notes:'Transitioned to free weights. DB bench primary. All upper work hit.',date:'Week 11'},
-  {week:12,day:'Day 1 — Upper A (Push)',result:'hit',notes:'Bench 135×10×5, OHP 75×10×5, Chest fly 25lb×12×4, Lat raise 15lb×16×4, Tricep 55lb barbell×10×3.',date:'Week 12'},
-  {week:12,day:'Day 2 — Lower A (Hinge)',result:'hit',notes:'Barbell deadlift 235×10×5, Barbell RDL 165×10×4, Banded leg curl 70lb×13×3. Hip thrusts BW only.',date:'Week 12'},
-  {week:12,day:'Day 3 — Upper B (Pull)',result:'mixed',notes:'Pull-ups BW×6×5. Bent-over row 115×10×5 (below prescribed). Banded face pull as written. DB rear delt fly 15lb×12×3. Barbell curl 50lb.',date:'Week 12'},
-  {week:13,day:'Day 1 — Upper A (Push)',result:'hit',notes:'All movements hit as prescribed.',date:'Week 13'},
-  {week:13,day:'Day 2 — Lower A (Hinge)',result:'hit',notes:'All movements hit as prescribed.',date:'Week 13'},
-  {week:13,day:'Day 3 — Upper B (Pull)',result:'mixed',notes:'Bent-over row only 5×8 at 125lb. All else hit.',date:'Week 13'},
-  {week:14,day:'Day 1 — Upper A (Push)',result:'hit',notes:'All movements hit.',date:'Week 14'},
-  {week:15,day:'Day 1 — Upper A (Push)',result:'hit',notes:'All upper work hit across the board.',date:'Week 15'},
-  {week:17,day:'Day 1 — Upper A (Push)',result:'hit',notes:'DB bench 70lb×8×5 primary. All movements hit.',date:'Week 17'},
-];
+const SEED_LOGS = [];
 
 const DEFAULT_EQ = [
   {name:'10 lb band',type:'Band'},{name:'20 lb band',type:'Band'},{name:'30 lb band',type:'Band'},
@@ -1229,6 +1217,18 @@ function saveState(){
 }
 function loadState(){
   try{
+    // Version flag — if app version changed, wipe old cache
+    const appVersion = 'v3-week1-reset';
+    const storedVersion = localStorage.getItem('wt_version');
+    if(storedVersion !== appVersion){
+      // Clear all old state on version change
+      localStorage.removeItem('wt_logs');
+      localStorage.removeItem('wt_eq');
+      localStorage.removeItem('wt_program');
+      localStorage.removeItem('wt_week');
+      localStorage.setItem('wt_version', appVersion);
+      return; // use fresh defaults from ST initialization
+    }
     const logs=localStorage.getItem('wt_logs');
     const eq=localStorage.getItem('wt_eq');
     const program=localStorage.getItem('wt_program');
