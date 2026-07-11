@@ -396,8 +396,8 @@ const CHECKPOINTS = {
       warmup:'2 min cardio · Hip circles 30s each · 90/90 hip switch 10 each · World\'s greatest stretch 5 each · Leg swings · Glute bridge 2×15 · Banded good morning 2×10 · BW RDL 2×8 · Bar ramp-up → 90% ×1',
       moves:[
         {n:'Sled harness sprint',b:'—',f:'4 × 15 yd light',fl:'',sets:4,reps:'15 yd',sec:'Sled primer'},
-        {n:'Banded deadlift',b:'305 lb',f:'Barbell deadlift',fl:'280 lb',sets:4,reps:'10'},
-        {n:'Romanian deadlift',b:'195 lb',f:'Barbell RDL',fl:'210 lb',sets:4,reps:'10'},
+        {n:'Hex bar deadlift',b:'305 lb',f:'Hex bar deadlift',fl:'280 lb',sets:4,reps:'10'},
+        {n:'DB Romanian deadlift',b:'195 lb',f:'DB Romanian deadlift',fl:'75 lb each',sets:4,reps:'10'},
         {n:'Cable leg curl',b:'70 lb',f:'Cable leg curl (ankle)',fl:'25 lb',sets:3,reps:'18'},
         {n:'Hip thrusts / KB swing',b:'BW × 32',f:'KB swing',fl:'53 lb × 24',sets:4,reps:'see loads'},
       ]},
@@ -420,7 +420,6 @@ const CHECKPOINTS = {
         {n:'Power clean',b:'—',f:'Barbell',fl:'140 lb',sets:4,reps:'3'},
         {n:'Hang clean',b:'—',f:'Barbell',fl:'130 lb',sets:4,reps:'4'},
         {n:'Push press',b:'—',f:'Barbell',fl:'120 lb',sets:4,reps:'5'},
-        {n:'Snatch-grip deadlift',b:'—',f:'Barbell',fl:'200 lb',sets:3,reps:'5'},
         {n:'Barbell good morning',b:'—',f:'Barbell',fl:'95 lb',sets:3,reps:'10'},
         {n:'KB complex',b:'—',f:'Swing+clean+press',fl:'40 lb',sets:3,reps:'5+5+5'},
         {n:'Hollow body hold',b:'—',f:'BW',fl:'BW',sets:3,reps:'50s',sec:'Core'},
@@ -588,17 +587,16 @@ const POOL = {
     {n:'DB preacher curl',b:'Banded preacher curl',bl:'80 lb',f:'DB preacher curl',fl:'25 lb each'},
   ],
   hinge_primary:[
-    {n:'Barbell deadlift',b:'Banded deadlift',bl:'300 lb',f:'Barbell deadlift',fl:'275 lb'},
+    {n:'Hex bar deadlift',b:'Banded deadlift',bl:'300 lb',f:'Hex bar deadlift',fl:'280 lb'},
     {n:'KB sumo deadlift',b:'Banded sumo DL',bl:'280 lb',f:'KB sumo deadlift',fl:'70 lb'},
-    {n:'DB deadlift',b:'Banded deadlift',bl:'260 lb',f:'DB deadlift',fl:'70 lb each'},
+    {n:'DB deadlift',b:'Banded deadlift',bl:'260 lb',f:'DB deadlift',fl:'90 lb each'},
     {n:'KB single-leg deadlift',b:'Banded SL DL',bl:'200 lb',f:'KB SL deadlift',fl:'53 lb each'},
-    {n:'DB single-leg deadlift',b:'Banded SL DL',bl:'180 lb',f:'DB SL deadlift',fl:'50 lb each'},
+    {n:'DB single-leg deadlift',b:'Banded SL DL',bl:'180 lb',f:'DB SL deadlift',fl:'60 lb each'},
     {n:'Barbell sumo deadlift',b:'Banded sumo DL',bl:'290 lb',f:'Barbell sumo DL',fl:'255 lb'},
-    {n:'KB double deadlift',b:'Banded deadlift',bl:'270 lb',f:'KB double DL',fl:'53 lb each'},
+    {n:'Trap bar jump shrug',b:'Banded deadlift',bl:'200 lb',f:'Trap bar jump shrug',fl:'135 lb'},
   ],
   hinge_secondary:[
-    {n:'Barbell RDL',b:'Banded RDL',bl:'190 lb',f:'Barbell RDL',fl:'205 lb'},
-    {n:'DB RDL',b:'Banded RDL',bl:'190 lb',f:'DB RDL',fl:'70 lb each'},
+    {n:'DB RDL',b:'Banded RDL',bl:'195 lb',f:'DB Romanian deadlift',fl:'75 lb each'},
     {n:'KB RDL',b:'Banded RDL',bl:'180 lb',f:'KB RDL',fl:'53 lb each'},
     {n:'KB single-leg RDL',b:'Banded SL RDL',bl:'120 lb',f:'KB SL RDL',fl:'53 lb'},
     {n:'DB single-leg RDL',b:'Banded SL RDL',bl:'120 lb',f:'DB SL RDL',fl:'50 lb each'},
@@ -708,7 +706,6 @@ const DAY_TEMPLATES = [
     {cat:'oly',lock:true,fixed:{n:'Power clean',b:'—',bl:'—',f:'Barbell',fl:'135 lb'},sets:4,reps:'3'},
     {cat:'oly',lock:true,fixed:{n:'Hang clean',b:'—',bl:'—',f:'Barbell',fl:'125 lb'},sets:4,reps:'4'},
     {cat:'oly',lock:true,fixed:{n:'Push press',b:'—',bl:'—',f:'Barbell',fl:'115 lb'},sets:4,reps:'5'},
-    {cat:'oly',lock:true,fixed:{n:'Snatch-grip deadlift',b:'—',bl:'—',f:'Barbell',fl:'195 lb'},sets:3,reps:'5'},
     {cat:'oly',lock:true,fixed:{n:'Barbell good morning',b:'—',bl:'—',f:'Barbell',fl:'90 lb'},sets:3,reps:'10'},
     {cat:'oly',lock:true,fixed:{n:'KB complex',b:'—',bl:'—',f:'Swing+clean+press',fl:'40 lb'},sets:3,reps:'5+5+5'},
     {cat:'core_flex',sec:'Core',lock:true,sets:3,reps:'50s',fixed:{n:'Hollow body hold',b:'—',bl:'—',f:'BW',fl:'BW'}},
@@ -1028,22 +1025,6 @@ function generateLocalWeek(targetWeek, fromWeek, perf, notes, parsedSignals){
       }
     });
   });
-
-  // Even/odd week RDL swap (Day 2 — Romanian Deadlift / Barbell RDL / DB RDL)
-  const lowerA = base[1];
-  if(lowerA){
-    const rdlMove = lowerA.moves.find(m => /rdl|romanian/i.test(m.n) || /rdl/i.test(m.f||''));
-    if(rdlMove){
-      if(isEvenWeek && !/db rdl/i.test(rdlMove.f)){
-        rdlMove.f = 'DB RDL';
-        rdlMove.fl = '70 lb each';
-      } else if(!isEvenWeek && /db rdl/i.test(rdlMove.f)){
-        rdlMove.f = 'Barbell RDL';
-        const bandParsed = parseLoadStr(rdlMove.b);
-        rdlMove.fl = bandParsed ? (bandParsed.num + 15) + ' lb' : '205 lb';
-      }
-    }
-  }
 
   // ACCESSORY AUTO-ROTATION — swap 1-2 non-primary accessory moves per day
   // Primaries are never touched. Only accessories (tricep, bicep, rear_delt, shoulder_acc, chest_acc)
