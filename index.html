@@ -391,14 +391,15 @@ const CHECKPOINTS = {
         {n:'Chest fly',b:'55 lb',f:'DB chest fly',fl:'25 lb each',sets:4,reps:'16'},
         {n:'Lateral raise',b:'25 lb',f:'DB lateral raise',fl:'20 lb each',sets:4,reps:'16'},
         {n:'Cable pushdown (rope)',b:'105 lb',f:'Cable pushdown (rope)',fl:'35 lb',sets:3,reps:'12'},
-        {n:'Side core rotation',b:'70 lb',f:'Side core rotation',fl:'70 lb',sets:3,reps:'10/side',sec:'Core'},
+        {n:'Cable overhead tricep ext',b:'100 lb',f:'Cable overhead tricep ext',fl:'45 lb',sets:3,reps:'12'},
+        {n:'Cable woodchop',b:'70 lb',f:'Cable woodchop',fl:'25 lb',sets:3,reps:'10/side',sec:'Core'},
         {n:'Sled push',b:'—',f:'3 × 20 yd moderate',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
       ]},
     { label:'Lower A — Hinge', type:'lower',
       warmup:'2 min cardio · Hip circles 30s each · 90/90 hip switch 10 each · World\'s greatest stretch 5 each · Leg swings · Glute bridge 2×15 · Banded good morning 2×10 · BW RDL 2×8 · Bar ramp-up → 90% ×1',
       moves:[
         {n:'Sled harness sprint',b:'—',f:'4 × 15 yd light',fl:'',sets:4,reps:'15 yd',sec:'Sled primer'},
-        {n:'Hex bar deadlift',b:'305 lb',f:'Hex bar deadlift',fl:'280 lb',sets:4,reps:'10'},
+        {n:'Hex bar deadlift',b:'305 lb',f:'Hex bar deadlift',fl:'260 lb',sets:4,reps:'10'},
         {n:'DB Romanian deadlift',b:'195 lb',f:'DB Romanian deadlift',fl:'75 lb each',sets:4,reps:'10'},
         {n:'Cable leg curl',b:'70 lb',f:'Cable leg curl (ankle)',fl:'25 lb',sets:3,reps:'18'},
         {n:'Hip thrusts / KB swing',b:'BW × 32',f:'KB swing',fl:'53 lb × 24',sets:4,reps:'see loads'},
@@ -517,7 +518,7 @@ const POOL = {
     {n:'Barbell overhead ext',b:'Banded overhead ext',bl:'100 lb',f:'Barbell overhead ext',fl:'55 lb'},
     {n:'DB overhead ext',b:'Banded overhead ext',bl:'90 lb',f:'DB overhead ext',fl:'50 lb'},
     {n:'KB overhead ext',b:'Banded overhead ext',bl:'90 lb',f:'KB overhead ext',fl:'35 lb'},
-    {n:'Cable overhead ext',b:'Banded overhead ext',bl:'90 lb',f:'Cable overhead ext (rope)',fl:'30 lb'},
+    {n:'Cable overhead ext',b:'Banded overhead ext',bl:'100 lb',f:'Cable overhead tricep ext',fl:'45 lb'},
     {n:'Cable pushdown (rope)',b:'Band pushdown',bl:'50 lb',f:'Cable pushdown (rope)',fl:'35 lb'},
     {n:'Cable pushdown (bar)',b:'Band pushdown',bl:'50 lb',f:'Cable pushdown (bar)',fl:'40 lb'},
     {n:'Cable single-arm pushdown',b:'Band single-arm pushdown',bl:'30 lb',f:'Cable single-arm pushdown',fl:'20 lb'},
@@ -589,7 +590,7 @@ const POOL = {
     {n:'DB preacher curl',b:'Banded preacher curl',bl:'80 lb',f:'DB preacher curl',fl:'25 lb each'},
   ],
   hinge_primary:[
-    {n:'Hex bar deadlift',b:'Banded deadlift',bl:'300 lb',f:'Hex bar deadlift',fl:'280 lb'},
+    {n:'Hex bar deadlift',b:'Banded deadlift',bl:'300 lb',f:'Hex bar deadlift',fl:'260 lb'},
     {n:'KB sumo deadlift',b:'Banded sumo DL',bl:'280 lb',f:'KB sumo deadlift',fl:'70 lb'},
     {n:'DB deadlift',b:'Banded deadlift',bl:'260 lb',f:'DB deadlift',fl:'90 lb each'},
     {n:'KB single-leg deadlift',b:'Banded SL DL',bl:'200 lb',f:'KB SL deadlift',fl:'53 lb each'},
@@ -663,10 +664,11 @@ const POOL = {
     {n:'Eccentric calf lower',b:'BW calf raise',bl:'BW',f:'Eccentric calf lower step',fl:'BW'},
   ],
   core_antirot:[
-    {n:'Side core rotation band',b:'Side rotation',bl:'70 lb',f:'Side rotation',fl:'70 lb'},
-    {n:'Pallof press',b:'Pallof press',bl:'30 lb',f:'Pallof press',fl:'30 lb'},
+    {n:'Cable woodchop (high-to-low)',b:'Band chop',bl:'40 lb',f:'Cable woodchop',fl:'25 lb'},
+    {n:'Cable woodchop (low-to-high)',b:'Band lift',bl:'40 lb',f:'Cable woodchop low-to-high',fl:'20 lb'},
+    {n:'Cable Pallof press',b:'Pallof press',bl:'30 lb',f:'Cable Pallof press',fl:'20 lb'},
     {n:'KB suitcase carry',b:'Side plank',bl:'BW',f:'KB suitcase carry',fl:'53 lb'},
-    {n:'Band chop high-to-low',b:'Band chop',bl:'40 lb',f:'Band chop',fl:'40 lb'},
+    {n:'Side core rotation band',b:'Side rotation',bl:'70 lb',f:'Side rotation',fl:'70 lb'},
   ],
   core_antiext:[
     {n:'Dead bug',b:'Dead bug',bl:'BW',f:'Dead bug +5 lb',fl:'5 lb'},
@@ -905,7 +907,7 @@ function tensionIncrement(num, isPrimary){
 function repIncrement(){ return 1; }
 
 // Movements that should never auto-progress via the local generator
-const NO_PROGRESS_KEYWORDS = ['sled','core rotation','dead bug','hollow body','farmer','pallof','side rotation'];
+const NO_PROGRESS_KEYWORDS = ['sled','core rotation','dead bug','hollow body','farmer','pallof','side rotation','woodchop'];
 function isNonProgressing(name){
   const n = name.toLowerCase();
   return NO_PROGRESS_KEYWORDS.some(k => n.includes(k));
@@ -1255,6 +1257,7 @@ const CORE_DAYS = [
       {n:'Side plank', sets:'3', reps:'30s/side', cue:'Elbow under shoulder. Hips stacked. Drive hip up — don\'t sag.'},
       {n:'Bicycle crunch', sets:'3', reps:'15/side', cue:'Slow and controlled. Opposite elbow to knee. Don\'t pull your neck.'},
       {n:'Russian twist (light DB/KB)', sets:'3', reps:'20', cue:'Lean back slightly, feet up or down. Rotate from the torso, not arms.'},
+      {n:'Side core rotation (band)', sets:'3', reps:'10/side', cue:'Band anchored at hip height. Rotate away from anchor. Control the return. Hips stay square.'},
       {n:'Pallof press (band)', sets:'3', reps:'10/side', cue:'Band at chest height, 10–25 lb tension. Press out and hold 2s. Hips and shoulders stay square.'},
     ]},
   { label:'Lower Abs', focus:'Day 3',
