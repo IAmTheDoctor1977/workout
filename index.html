@@ -1075,25 +1075,31 @@ function generateLocalWeek(targetWeek, fromWeek, perf, notes, parsedSignals){
 
   base.forEach(day => {
     let swapsLeft = 2; // max 2 accessory swaps per day
+    // Track all movement names already in this day to prevent duplicates
+    const usedNames = new Set(day.moves.map(m => m.n.toLowerCase()));
+
     day.moves.forEach(m => {
       if(swapsLeft <= 0) return;
       if(isNonProgressing(m.n)) return;
-      if(isPrimaryMove(m.n)) return; // never touch primaries
+      if(isPrimaryMove(m.n)) return;
 
       const cat = guessCategory(m.n);
       if(!cat) return;
 
-      // Only rotate every other week on average — use week parity + movement index as seed
       const weekNum = parseInt(targetWeek);
       const moveHash = m.n.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
-      if((weekNum + moveHash) % 3 !== 0) return; // roughly 1-in-3 chance per eligible move
+      if((weekNum + moveHash) % 3 !== 0) return;
 
       const pool = ACCESSORY_CATS[cat] || [];
-      const alt = pool.filter(p => p.n !== m.n);
+      // Filter out current movement AND any already used in this day
+      const alt = pool.filter(p => p.n !== m.n && !usedNames.has(p.n.toLowerCase()));
       if(!alt.length) return;
 
-      const pick = alt[Math.floor((weekNum * moveHash) % alt.length)]; // deterministic, not random
-      // Preserve progression: carry over the current load values, just swap the movement name/instrument
+      const pick = alt[Math.floor((weekNum * moveHash) % alt.length)];
+      // Remove old name from used set, add new one
+      usedNames.delete(m.n.toLowerCase());
+      usedNames.add(pick.n.toLowerCase());
+
       m.n = pick.n;
       m.f = pick.f;
       m.fl = pick.fl;
