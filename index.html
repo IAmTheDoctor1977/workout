@@ -1149,8 +1149,9 @@ async function generateWeek(){
 
   let parsedSignals = {};
 
-  // If there are notes, use API just to parse them into structured hold/progress signals
   if(notes){
+    // Step 1: try API for smart note parsing
+    let apiSuccess = false;
     try{
       const movementNames = (ST.program||W17).flatMap(d=>d.moves.map(m=>m.n)).join(', ');
       const prompt = `You are a strength training assistant. The user logged these notes about their workout: "${notes}"
@@ -1159,22 +1160,57 @@ Here are the movement names in their program: ${movementNames}
 
 Return ONLY a JSON object mapping movement names to one of: "hold", "progress", or "reduce".
 Only include movements explicitly mentioned in the notes.
-Rules: if they failed, stalled, or had pain → "hold" or "reduce". If they hit it easily or crushed it → "progress". 
+Rules: if they failed, stalled, or had pain → "hold" or "reduce". If they hit it easily or crushed it → "progress".
 Example: {"Banded chest press": "hold", "Lat pulldown": "progress"}
 Return only valid JSON, nothing else.`;
 
+      const controller = new AbortController();
+      const timeout = setTimeout(()=>controller.abort(), 8000);
       const r = await fetch('https://api.anthropic.com/v1/messages',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
+        signal: controller.signal,
         body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:300,messages:[{role:'user',content:prompt}]})
       });
+      clearTimeout(timeout);
       const d = await r.json();
       const txt = d.content.filter(b=>b.type==='text').map(b=>b.text).join('').trim();
       const clean = txt.replace(/```json|```/g,'').trim();
       parsedSignals = JSON.parse(clean);
-    }catch(e){
-      // API call failed or parse error — fall back to rules-only, no penalty
-      parsedSignals = {};
+      apiSuccess = true;
+    }catch(e){ apiSuccess = false; }
+
+    // Step 2: if API failed, parse notes locally — this always runs as backup
+    if(!apiSuccess){
+      const lowerNotes = notes.toLowerCase();
+      const allMoves = (ST.program||W17).flatMap(d=>d.moves.map(m=>m.n));
+      const HOLD_WORDS = ['hold','same','keep','steady','stall','fail','miss','heavy','tough','couldn\'t','could not','hurt','pain','sore','no progress','stay'];
+      const PROG_WORDS = ['easy','light','crush','hit all','felt good','progress','bump','increase','add weight'];
+      const REDUCE_WORDS = ['reduce','drop','lower','too heavy','decrease'];
+
+      allMoves.forEach(name => {
+        const lower = name.toLowerCase();
+        // Check if any significant word from the movement name appears in notes
+        const words = lower.split(/[\s\/\-\+]+/).filter(w=>w.length>3);
+        const synonyms = {
+          'bench':['bench','chest press'],'ohp':['shoulder press','overhead press','ohp'],
+          'deadlift':['deadlift','dl'],'squat':['squat'],'rdl':['rdl','romanian'],
+          'row':['row'],'pulldown':['pulldown','lat pull'],'curl':['curl','bicep'],
+          'lateral':['lateral raise'],'tricep':['tricep','pushdown','ext']
+        };
+        let mentioned = words.some(w=>lowerNotes.includes(w));
+        if(!mentioned){
+          Object.entries(synonyms).forEach(([k,syns])=>{
+            if(lower.includes(k) && syns.some(s=>lowerNotes.includes(s))) mentioned=true;
+          });
+        }
+        if(!mentioned) return;
+
+        if(REDUCE_WORDS.some(w=>lowerNotes.includes(w))) parsedSignals[name]='reduce';
+        else if(HOLD_WORDS.some(w=>lowerNotes.includes(w))) parsedSignals[name]='hold';
+        else if(PROG_WORDS.some(w=>lowerNotes.includes(w))) parsedSignals[name]='progress';
+        else parsedSignals[name]='hold'; // if mentioned but unclear — default to hold
+      });
     }
   }
 
@@ -1203,11 +1239,9 @@ Return only valid JSON, nothing else.`;
   document.getElementById('wk-num').textContent = ST.week;
   renderProgDay(ST.progDay); if(typeof updateDeloadIndicator==="function") updateDeloadIndicator();
 
-  const noteStatus = Object.keys(parsedSignals).length
-    ? `Notes parsed: ${JSON.stringify(parsedSignals)}`
-    : notes ? 'Note parsing unavailable (offline) — used rules only.' : '';
-
-  document.getElementById('gen-result').innerHTML=`<div class="gen-output">Week ${week} generated ✓\n${noteStatus ? noteStatus+'\n' : ''}\n${summary}</div>`;
+  const heldMoves = Object.entries(parsedSignals).filter(([,v])=>v==='hold'||v==='reduce').map(([k])=>k);
+  const heldNote = heldMoves.length ? `Held from notes: ${heldMoves.join(', ')}\n` : '';
+  document.getElementById('gen-result').innerHTML=`<div class="gen-output">Week ${week} generated ✓\n${heldNote}\n${summary}</div>`;
 }
 
 function resetToCheckpoint(){
