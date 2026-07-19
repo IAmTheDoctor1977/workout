@@ -349,6 +349,22 @@ textarea { min-height: 80px; resize: vertical; }
       </div>
     </div>
 
+    <!-- CHICAS WORKOUT -->
+    <div class="screen" id="s-chicas">
+      <div class="screen-header">
+        <div><div class="screen-title">CHICAS <span>WORKOUT</span></div><div class="screen-sub">Maya & Layla · Summer Strength Program</div></div>
+      </div>
+
+      <!-- GIRL SELECTOR -->
+      <div style="display:flex;gap:8px;padding:12px 16px 0;">
+        <button id="btn-maya" onclick="selectGirl('maya')" class="btn btn-primary" style="flex:1;font-size:14px;">Maya</button>
+        <button id="btn-layla" onclick="selectGirl('layla')" class="btn btn-ghost" style="flex:1;font-size:14px;">Layla</button>
+      </div>
+
+      <!-- GIRL DISPLAY -->
+      <div id="chicas-content" style="padding-bottom:1rem;"></div>
+    </div>
+
     <!-- EQUIPMENT -->
     <div class="screen" id="s-equipment">
       <div class="screen-header"><div class="screen-title">EQUIP<span>MENT</span></div></div>
@@ -402,6 +418,10 @@ textarea { min-height: 80px; resize: vertical; }
     <button class="nav-btn" onclick="showScreen('chat',this)">
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       Coach
+    </button>
+    <button class="nav-btn" onclick="showScreen('chicas',this)">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Chicas
     </button>
   </nav>
 </div>
@@ -769,6 +789,7 @@ function showScreen(id,btn){
   if(id==='equipment')renderEq();
   if(id==='random')renderRandDay();
   if(id==='chat')initChat();
+  if(id==='chicas')initChicas();
 }
 
 // PROGRAM
@@ -1833,6 +1854,306 @@ function clearChat(){
   document.getElementById('chat-messages').innerHTML = '';
   initChat();
 }
+
+// ============================================================
+// CHICAS WORKOUT — Maya & Layla
+// ============================================================
+
+const CHICAS_WARMUP = [
+  {n:'March in place', dur:'1 min', cue:'Lift your knees up, swing your arms. Keep going!'},
+  {n:'Arm circles forward', dur:'30 sec', cue:'Arms out wide, make big circles forward. Feel your shoulders wake up.'},
+  {n:'Arm circles backward', dur:'30 sec', cue:'Now the other way — big circles backward.'},
+  {n:'Hip circles', dur:'30 sec each side', cue:'Hands on hips, draw a big circle with your belly button.'},
+  {n:'Slow bodyweight squat', dur:'5 reps', cue:'Feet shoulder width. Sit back like you\'re finding a chair. Stand back up tall.'},
+  {n:'Shoulder rolls', dur:'30 sec forward, 30 sec back', cue:'Roll your shoulders up, back, and down. Now reverse.'},
+  {n:'Trunk rotation', dur:'10 each side', cue:'Arms crossed, turn and look behind you slowly. Feel the twist.'},
+];
+
+const CHICAS_PROGRAM = {
+  days: [
+    { label:'Upper Body', day:1,
+      warmup: CHICAS_WARMUP,
+      exercises:[
+        {n:'Med ball chest press', sets:2, reps:'8', load:'8 lb ball', feel:'Feel your back flat on the floor. Press the ball straight up.', action:'Squeeze the ball. Push up. Lower slow.'},
+        {n:'DB shoulder press (seated)', sets:2, reps:'8', load:'5 lb each', feel:'Feel your bottom on the bench. Back tall. Elbows below the weights.', action:'Push up to the sky. Lower slow.'},
+        {n:'DB bicep curl', sets:2, reps:'10', load:'5 lb each', feel:'Elbows stay at your sides — don\'t let them move. Feel your front arm working.', action:'Curl up, squeeze. Lower all the way down.'},
+        {n:'Band pull-apart', sets:2, reps:'12', load:'light loop band', feel:'Arms straight in front. Feel the band between your hands.', action:'Pull apart to your sides. Squeeze your shoulder blades. Return slow.'},
+        {n:'Dead bug', sets:2, reps:'6 each side', load:'bodyweight', feel:'Back FLAT on the floor. Press it down. Feel it touching the whole time.', action:'One arm up, opposite leg down slow. Come back. Switch.', sec:'Core'},
+      ]},
+    { label:'Lower Body', day:2,
+      warmup: CHICAS_WARMUP,
+      exercises:[
+        {n:'Bodyweight squat', sets:2, reps:'10', load:'bodyweight', feel:'Feet shoulder width. Feel your whole foot on the floor.', action:'Sit back like finding a chair. Stand tall. Squeeze your bottom at the top.'},
+        {n:'Glute bridge', sets:2, reps:'10', load:'bodyweight', feel:'Back flat on the floor. Feet close to your bottom. Feel your heels pressing down.', action:'Push the floor away. Lift your hips. Squeeze your bottom hard. Lower slow.'},
+        {n:'Reverse lunge', sets:2, reps:'6 each leg', load:'bodyweight', feel:'Stand tall. Feel Dad\'s hand if you need balance.', action:'Step back. Lower your back knee toward the floor. Push back up.'},
+        {n:'Med ball carry (farmer walk)', sets:2, reps:'20 steps', load:'8 lb ball', feel:'Hold the ball at your belly. Stand tall. Shoulders back.', action:'Walk slowly and steady. Don\'t let the ball pull you forward.'},
+        {n:'Modified side plank (from knees)', sets:2, reps:'20s each side', load:'bodyweight', feel:'Knees on the floor. Elbow under your shoulder. Feel your side working.', action:'Hold still. Breathe. Keep your hips up.', sec:'Core'},
+      ]},
+  ]
+};
+
+// Progression state per girl
+const DEFAULT_CHICA = function(name){
+  return {
+    name: name,
+    week: 1,
+    dayIdx: 0,
+    logs: [],
+    // Track sessions per exercise for form-first progression
+    exercises: {
+      // exerciseName: { formSessions: 0, sets: 2, reps: N, load: '...' }
+    }
+  };
+};
+
+let CHICAS_ST = {
+  activeGirl: 'maya',
+  maya: null,
+  layla: null,
+};
+
+function loadChicasState(){
+  try{
+    const s = localStorage.getItem('wt_chicas');
+    if(s){
+      const d = JSON.parse(s);
+      CHICAS_ST.activeGirl = d.activeGirl||'maya';
+      CHICAS_ST.maya = d.maya||DEFAULT_CHICA('Maya');
+      CHICAS_ST.layla = d.layla||DEFAULT_CHICA('Layla');
+    } else {
+      CHICAS_ST.maya = DEFAULT_CHICA('Maya');
+      CHICAS_ST.layla = DEFAULT_CHICA('Layla');
+    }
+  }catch(e){
+    CHICAS_ST.maya = DEFAULT_CHICA('Maya');
+    CHICAS_ST.layla = DEFAULT_CHICA('Layla');
+  }
+}
+
+function saveChicasState(){
+  try{ localStorage.setItem('wt_chicas', JSON.stringify(CHICAS_ST)); }catch(e){}
+}
+
+function selectGirl(g){
+  CHICAS_ST.activeGirl = g;
+  saveChicasState();
+  document.getElementById('btn-maya').className = g==='maya' ? 'btn btn-primary' : 'btn btn-ghost';
+  document.getElementById('btn-layla').className = g==='layla' ? 'btn btn-primary' : 'btn btn-ghost';
+  document.getElementById('btn-maya').style.flex = '1';
+  document.getElementById('btn-layla').style.flex = '1';
+  document.getElementById('btn-maya').style.fontSize = '14px';
+  document.getElementById('btn-layla').style.fontSize = '14px';
+  renderChicas();
+}
+
+function getGirl(){ return CHICAS_ST[CHICAS_ST.activeGirl]; }
+
+function initChicas(){
+  loadChicasState();
+  const g = CHICAS_ST.activeGirl;
+  document.getElementById('btn-maya').className = g==='maya' ? 'btn btn-primary' : 'btn btn-ghost';
+  document.getElementById('btn-layla').className = g==='layla' ? 'btn btn-primary' : 'btn btn-ghost';
+  document.getElementById('btn-maya').style.flex='1';document.getElementById('btn-layla').style.flex='1';
+  document.getElementById('btn-maya').style.fontSize='14px';document.getElementById('btn-layla').style.fontSize='14px';
+  renderChicas();
+}
+
+function renderChicas(){
+  const girl = getGirl();
+  if(!girl){ document.getElementById('chicas-content').innerHTML=''; return; }
+  const day = CHICAS_PROGRAM.days[girl.dayIdx];
+
+  let html = '';
+
+  // Metrics
+  html += '<div class="metric-grid" style="margin:10px 16px 0;">';
+  html += '<div class="metric"><div class="metric-label">Athlete</div><div class="metric-value" style="font-size:24px;">'+girl.name+'</div></div>';
+  html += '<div class="metric"><div class="metric-label">Week</div><div class="metric-value">'+girl.week+'</div></div>';
+  html += '<div class="metric"><div class="metric-label">Sessions logged</div><div class="metric-value">'+girl.logs.length+'</div></div>';
+  html += '<div class="metric"><div class="metric-label">Today</div><div class="metric-value sm">'+day.label+'</div></div>';
+  html += '</div>';
+
+  // Day switch
+  html += '<div class="day-chips" style="padding:10px 16px 0;">';
+  CHICAS_PROGRAM.days.forEach(function(d,i){
+    html += '<div class="day-chip'+(i===girl.dayIdx?' active':'')+'" onclick="chicasSetDay('+i+')">Day '+d.day+' · '+d.label+'</div>';
+  });
+  html += '</div>';
+
+  // Warmup
+  html += '<div class="section-divider">Warm-up · 5–7 minutes</div>';
+  html += '<div class="card" style="padding:0;overflow:hidden;"><table class="prog-table"><thead><tr><th style="width:35%">Movement</th><th style="width:18%">Duration</th><th>Cue</th></tr></thead><tbody>';
+  CHICAS_WARMUP.forEach(function(w){
+    html += '<tr><td><div class="ex-name">'+w.n+'</div></td><td style="font-size:11px;color:var(--mid);">'+w.dur+'</td><td><div style="font-size:11.5px;color:var(--mid);font-style:italic;">'+w.cue+'</div></td></tr>';
+  });
+  html += '</tbody></table></div>';
+
+  // Workout
+  html += '<div class="section-divider">Workout · '+day.label+'</div>';
+  html += '<div class="card" style="padding:0;overflow:hidden;"><table class="prog-table"><thead><tr><th style="width:32%">Exercise</th><th style="width:12%;text-align:center">Sets</th><th style="width:12%;text-align:center">Reps</th><th style="width:14%">Load</th><th>Cues</th></tr></thead><tbody>';
+
+  let lastSec = null;
+  day.exercises.forEach(function(ex){
+    const sec = ex.sec||null;
+    if(sec !== lastSec){
+      if(sec) html += '<tr class="sec-row"><td colspan="5">'+sec+'</td></tr>';
+      lastSec = sec;
+    }
+    // Check if this girl has a custom progression for this exercise
+    const prog = girl.exercises[ex.n];
+    const sets = prog ? prog.sets : ex.sets;
+    const reps = prog ? prog.reps : ex.reps;
+    const load = prog ? prog.load : ex.load;
+    const formOk = prog && prog.formSessions >= 2;
+    const readyBadge = formOk ? '<span class="badge b-new" style="margin-left:4px;">ready to progress</span>' : '';
+
+    html += '<tr><td><div class="ex-name">'+ex.n+'</div>'+readyBadge+'</td>';
+    html += '<td class="num-cell">'+sets+'</td>';
+    html += '<td class="num-cell">'+reps+'</td>';
+    html += '<td><span style="font-size:11px;color:var(--accent);font-family:var(--font-mono);">'+load+'</span></td>';
+    html += '<td><div style="font-size:11px;color:var(--mid);font-style:italic;">'+ex.feel+'</div><div style="font-size:11.5px;color:var(--ink);margin-top:3px;font-weight:500;">'+ex.action+'</div></td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+
+  // Session controls
+  html += '<div style="padding:10px 16px;display:flex;gap:8px;">';
+  html += '<button class="btn btn-primary" style="flex:1;" onclick="logChicasSession()">Log session ✓</button>';
+  html += '<button class="btn btn-ghost" onclick="readChicasWorkout()" style="font-size:12px;">🔊 Read aloud</button>';
+  html += '</div>';
+
+  // Form tracking per exercise
+  html += '<div class="section-divider">Form tracking · '+girl.name+'</div>';
+  html += '<div class="card">';
+  html += '<p style="font-size:11.5px;color:var(--mid);margin-bottom:10px;">Mark form as solid after each session. 2 solid sessions unlocks progression. Note: 1–2 lb jumps only — consider micro-plates or fractional weights.</p>';
+  day.exercises.forEach(function(ex){
+    const prog = girl.exercises[ex.n]||{formSessions:0,sets:ex.sets,reps:ex.reps,load:ex.load};
+    const fs = prog.formSessions||0;
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--rule);">';
+    html += '<div><div style="font-size:12.5px;font-weight:500;">'+ex.n+'</div>';
+    html += '<div style="font-size:11px;color:var(--mid);">Form sessions: '+fs+'/2</div></div>';
+    html += '<div style="display:flex;gap:6px;">';
+    html += '<button class="btn btn-ghost" style="padding:5px 10px;font-size:11px;" onclick="markFormSession(\''+ex.n.replace(/'/g,"\\'")+'\')" '+(fs>=2?'disabled style="opacity:0.4;"':'')+'>✓ Good form</button>';
+    if(fs>=2) html += '<button class="btn btn-primary" style="padding:5px 10px;font-size:11px;" onclick="progressExercise(\''+ex.n.replace(/'/g,"\\'")+'\')">Progress ↑</button>';
+    html += '</div></div>';
+  });
+  html += '</div>';
+
+  // Log history
+  if(girl.logs.length){
+    html += '<div class="section-divider">'+girl.name+'\'s History</div>';
+    html += '<div class="card">';
+    girl.logs.slice(0,5).forEach(function(l){
+      html += '<div class="history-item"><div class="history-week" style="font-size:16px;">Week '+l.week+' · Day '+l.day+'</div>';
+      html += '<div class="history-date">'+l.date+'</div>';
+      if(l.notes) html += '<div class="history-notes">'+l.notes+'</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  document.getElementById('chicas-content').innerHTML = html;
+}
+
+function chicasSetDay(i){
+  const girl = getGirl();
+  girl.dayIdx = i;
+  saveChicasState();
+  renderChicas();
+}
+
+function markFormSession(exName){
+  const girl = getGirl();
+  const day = CHICAS_PROGRAM.days[girl.dayIdx];
+  const ex = day.exercises.find(function(e){ return e.n===exName; });
+  if(!ex) return;
+  if(!girl.exercises[exName]) girl.exercises[exName] = {formSessions:0, sets:ex.sets, reps:ex.reps, load:ex.load};
+  if(girl.exercises[exName].formSessions < 2) girl.exercises[exName].formSessions++;
+  saveChicasState();
+  renderChicas();
+}
+
+function progressExercise(exName){
+  const girl = getGirl();
+  const day = CHICAS_PROGRAM.days[girl.dayIdx];
+  const ex = day.exercises.find(function(e){ return e.n===exName; });
+  if(!ex) return;
+  if(!girl.exercises[exName]) girl.exercises[exName] = {formSessions:2, sets:ex.sets, reps:ex.reps, load:ex.load};
+  const prog = girl.exercises[exName];
+
+  // Progression order: reps → sets → load
+  const baseReps = parseInt(prog.reps)||8;
+  const maxReps = baseReps + 4; // 4 rep ceiling before set bump
+  const curSets = parseInt(prog.sets)||2;
+
+  if(baseReps < maxReps){
+    prog.reps = String(baseReps + 1);
+  } else if(curSets < 4){
+    prog.sets = curSets + 1;
+    prog.reps = String(baseReps - 2); // reset reps slightly when adding set
+  } else {
+    // Load — flag for 1-2 lb increase
+    prog.load = prog.load + ' → +1-2 lb (add micro-plate)';
+    prog.sets = 2; // reset sets
+    prog.reps = String(baseReps - 2); // reset reps
+  }
+  prog.formSessions = 0; // reset form clock at new level
+  saveChicasState();
+  renderChicas();
+}
+
+function logChicasSession(){
+  const girl = getGirl();
+  const day = CHICAS_PROGRAM.days[girl.dayIdx];
+  const entry = {
+    week: girl.week,
+    day: day.day,
+    label: day.label,
+    date: new Date().toLocaleDateString(),
+    notes: ''
+  };
+  girl.logs.unshift(entry);
+  // Advance day
+  girl.dayIdx = (girl.dayIdx + 1) % CHICAS_PROGRAM.days.length;
+  if(girl.dayIdx === 0) girl.week++;
+  saveChicasState();
+  renderChicas();
+}
+
+function readChicasWorkout(){
+  if(!window.speechSynthesis){ alert('Text-to-speech not available on this device.'); return; }
+  window.speechSynthesis.cancel();
+  const girl = getGirl();
+  const day = CHICAS_PROGRAM.days[girl.dayIdx];
+  let script = girl.name + ', here is your ' + day.label + ' workout. ';
+
+  // Warmup
+  script += 'First, your warm-up. ';
+  CHICAS_WARMUP.forEach(function(w){
+    script += w.n + ' for ' + w.dur + '. ' + w.cue + '. ';
+  });
+
+  // Workout
+  script += 'Now your workout. ';
+  day.exercises.forEach(function(ex, i){
+    const prog = girl.exercises[ex.n];
+    const sets = prog ? prog.sets : ex.sets;
+    const reps = prog ? prog.reps : ex.reps;
+    const load = prog ? prog.load : ex.load;
+    script += 'Exercise ' + (i+1) + '. ' + ex.n + '. ' + sets + ' sets of ' + reps + ' reps. ' + load + '. ';
+    script += ex.feel + ' ' + ex.action + '. ';
+  });
+  script += 'Great work, ' + girl.name + '! That\'s your workout for today.';
+
+  const utterance = new SpeechSynthesisUtterance(script);
+  utterance.rate = 0.85;
+  utterance.pitch = 1.0;
+  utterance.volume = 1.0;
+  window.speechSynthesis.speak(utterance);
+}
+
+// Init
+loadChicasState();
 </script>
 </body>
 </html>
