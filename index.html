@@ -433,14 +433,14 @@ const CHECKPOINTS = {
     { label:'Upper A — Push', type:'upper',
       warmup:'2 min cardio · Barbell hang clean + push press complex ramp-up @ 50% 2×3 · Arm circles · Band pull-apart 2×15 · Wall slide 2×10',
       moves:[
-        {n:'Barbell hang clean + push press complex',b:'—',f:'Barbell complex',fl:'115 lb',sets:4,reps:'5',sec:'Power primer'},
+        {n:'Barbell hang clean + push press complex',b:'—',f:'Barbell complex',fl:'125 lb',sets:4,reps:'5',sec:'Power primer'},
         {n:'Banded chest press',b:'220 lb',f:'DB bench press',fl:'75 lb each',sets:4,reps:'8'},
         {n:'Shoulder press',b:'115 lb',f:'DB shoulder press',fl:'50 lb each',sets:4,reps:'8'},
         {n:'Chest fly',b:'55 lb',f:'DB chest fly',fl:'25 lb each',sets:4,reps:'16'},
         {n:'Lateral raise',b:'25 lb',f:'DB lateral raise',fl:'20 lb each',sets:4,reps:'16'},
-        {n:'Cable pushdown (rope)',b:'105 lb',f:'Cable pushdown (rope)',fl:'35 lb',sets:3,reps:'12'},
+        {n:'Cable pushdown (rope)',b:'105 lb',f:'Cable pushdown (rope)',fl:'45 lb',sets:3,reps:'12'},
         {n:'Cable overhead tricep ext',b:'100 lb',f:'Cable overhead tricep ext',fl:'45 lb',sets:3,reps:'12'},
-        {n:'Cable woodchop',b:'70 lb',f:'Cable woodchop',fl:'25 lb',sets:3,reps:'10/side',sec:'Core'},
+        {n:'Cable woodchop',b:'70 lb',f:'Cable woodchop',fl:'35 lb',sets:3,reps:'10/side',sec:'Core'},
         {n:'Sled push',b:'—',f:'3 × 20 yd moderate',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
       ]},
     { label:'Lower A — Hinge', type:'lower',
@@ -707,7 +707,7 @@ const POOL = {
     {n:'Eccentric calf lower',b:'BW calf raise',bl:'BW',f:'Eccentric calf lower step',fl:'BW'},
   ],
   core_antirot:[
-    {n:'Cable woodchop (high-to-low)',b:'Band chop',bl:'40 lb',f:'Cable woodchop',fl:'25 lb'},
+    {n:'Cable woodchop (high-to-low)',b:'Band chop',bl:'40 lb',f:'Cable woodchop',fl:'35 lb'},
     {n:'Cable woodchop (low-to-high)',b:'Band lift',bl:'40 lb',f:'Cable woodchop low-to-high',fl:'20 lb'},
     {n:'Cable Pallof press',b:'Pallof press',bl:'30 lb',f:'Cable Pallof press',fl:'20 lb'},
     {n:'KB suitcase carry',b:'Side plank',bl:'BW',f:'KB suitcase carry',fl:'53 lb'},
@@ -1500,25 +1500,6 @@ const BW_PROGRAM = {
         {n:'Superman hold', sets:3, reps:'10 × 3s', cue:'Lying prone. Lift arms and legs simultaneously. Squeeze glutes. Hold 3s.'},
         {n:'Prone Y-raise', sets:3, reps:'12', cue:'Lying face down. Arms in Y position. Lift and lower slow. Rear delt.'},
       ]},
-    { label:'Legs', focus:'Quads · Glutes · Hamstrings · Tibialis',
-      exercises:[
-        {n:'BW squat', sets:3, reps:'15–20', cue:'Full depth. Knees track toes. Chest up. Pause at bottom.'},
-        {n:'Reverse lunge', sets:3, reps:'10/leg', cue:'Step back, knee to 90°. Upright torso. Deceleration focus.'},
-        {n:'Glute bridge', sets:3, reps:'15 × 2s hold', cue:'Upper back on floor. Drive hips up. Posterior pelvic tilt at top.'},
-        {n:'Single-leg RDL (BW)', sets:3, reps:'8/leg', cue:'Hip hinge on one leg. Feel the hamstring load. Control the balance.'},
-        {n:'Lateral lunge', sets:3, reps:'8/leg', cue:'Wide step sideways. Sit into the hip. Straight leg stays straight.'},
-        {n:'Calf raise (single leg)', sets:3, reps:'15/leg', cue:'Wall for balance. Full range. Pause at top.'},
-        {n:'Wall toe raise (tibialis)', sets:3, reps:'15', cue:'Heels on floor, back against wall. Lift toes up as high as possible. Lower slow. Great for shin and ankle health.'},
-      ]},
-    { label:'Core', focus:'Anti-extension · Rotation · Stability',
-      exercises:[
-        {n:'Dead bug', sets:3, reps:'10/side', cue:'Lower back pressed flat. Breathe out on extension. Slow.'},
-        {n:'Side plank', sets:3, reps:'30s/side', cue:'Elbow under shoulder. Drive hip up. Don\'t sag.'},
-        {n:'Hollow body hold', sets:3, reps:'25–35s', cue:'Lower back pressed to floor. Arms overhead or by sides.'},
-        {n:'Plank shoulder tap', sets:3, reps:'20 taps', cue:'Wide feet. Minimize hip rotation. Slow taps.'},
-        {n:'Bear crawl', sets:3, reps:'10 steps fwd+back', cue:'Knees 1" off floor. Opposite hand/foot. Hips level.'},
-        {n:'Slow standing twist', sets:3, reps:'10/side', cue:'Arms out, rotate from the torso. Slow and controlled. No momentum.'},
-      ]},
   ]
 };
 
@@ -1683,7 +1664,7 @@ function generateBWWeek(){
     ],
   };
 
-  const dayCats = ['push','pull','legs','core'];
+  const dayCats = ['push','pull'];
   newDays.forEach((day,di)=>{
     const cat = dayCats[di];
     const pool = BW_ALT_POOL[cat]||[];
