@@ -164,7 +164,7 @@ textarea { min-height: 80px; resize: vertical; }
       <div class="metric-grid">
         <div class="metric"><div class="metric-label">Current week</div><div class="metric-value" id="m-week">17</div></div>
         <div class="metric"><div class="metric-label">Sessions logged</div><div class="metric-value" id="m-sessions">0</div></div>
-        <div class="metric"><div class="metric-label">Program</div><div class="metric-value sm">U/L/U/O/L</div></div>
+        <div class="metric"><div class="metric-label">Program</div><div class="metric-value sm">U/L/U/L</div></div>
         <div class="metric"><div class="metric-label">Next deload</div><div class="metric-value sm" id="m-deload">Wk 4</div></div>
       </div>
       <div class="day-chips" id="prog-day-chips"></div>
@@ -184,8 +184,7 @@ textarea { min-height: 80px; resize: vertical; }
             <option>Day 1 — Upper A (Push)</option>
             <option>Day 2 — Lower A (Hinge)</option>
             <option>Day 3 — Upper B (Pull)</option>
-            <option>Day 4 — Olympic</option>
-            <option>Day 5 — Lower B (Quad)</option>
+            <option>Day 4 — Lower B (Quad)</option>
           </select>
         </div>
         <div class="form-group"><label class="form-label">Performance notes</label>
@@ -412,8 +411,9 @@ textarea { min-height: 80px; resize: vertical; }
 const CHECKPOINTS = {
   1: [
     { label:'Upper A — Push', type:'upper',
-      warmup:'2 min cardio · Arm circles 30s each · Band pull-apart 2×15 · Wall slide 2×10 · Push-up 2×10 slow · DB ramp-up: 50% ×5 → 75% ×3',
+      warmup:'2 min cardio · Barbell hang clean + push press complex ramp-up @ 50% 2×3 · Arm circles · Band pull-apart 2×15 · Wall slide 2×10',
       moves:[
+        {n:'Barbell hang clean + push press complex',b:'—',f:'Barbell complex',fl:'115 lb',sets:4,reps:'5',sec:'Power primer'},
         {n:'Banded chest press',b:'220 lb',f:'DB bench press',fl:'75 lb each',sets:4,reps:'8'},
         {n:'Shoulder press',b:'115 lb',f:'DB shoulder press',fl:'50 lb each',sets:4,reps:'8'},
         {n:'Chest fly',b:'55 lb',f:'DB chest fly',fl:'25 lb each',sets:4,reps:'16'},
@@ -429,6 +429,7 @@ const CHECKPOINTS = {
         {n:'Sled harness sprint',b:'—',f:'4 × 15 yd light',fl:'',sets:4,reps:'15 yd',sec:'Sled primer'},
         {n:'Hex bar deadlift',b:'305 lb',f:'Hex bar deadlift',fl:'260 lb',sets:4,reps:'10'},
         {n:'DB Romanian deadlift',b:'195 lb',f:'DB Romanian deadlift',fl:'75 lb each',sets:4,reps:'10'},
+        {n:'Barbell good morning',b:'—',f:'Barbell good morning',fl:'95 lb',sets:3,reps:'10'},
         {n:'Cable leg curl',b:'70 lb',f:'Cable leg curl (ankle)',fl:'25 lb',sets:3,reps:'18'},
         {n:'Hip thrusts / KB swing',b:'BW × 32',f:'KB swing',fl:'53 lb × 24',sets:4,reps:'see loads'},
         {n:'⟳ TRI-SET: Goblet reverse lunge',b:'BW × 10/leg',f:'Goblet reverse lunge',fl:'35 lb × 10/leg',sets:4,reps:'10/leg',sec:'Tri-set'},
@@ -445,18 +446,8 @@ const CHECKPOINTS = {
         {n:'Cable curl (bar)',b:'105 lb',f:'Cable curl (bar)',fl:'30 lb',sets:3,reps:'14'},
         {n:'Cable single-arm curl',b:'95 lb',f:'Cable single-arm curl',fl:'15 lb',sets:4,reps:'19'},
         {n:'Dead bug',b:'BW',f:'Dead bug',fl:'BW',sets:3,reps:'10/side',sec:'Core'},
+        {n:'KB complex (swing+clean+press)',b:'—',f:'KB complex',fl:'40 lb',sets:3,reps:'5+5+5',sec:'Finisher'},
         {n:'Sled pull',b:'—',f:'3 × 20 yd rope/harness',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
-      ]},
-    { label:'Olympic Day', type:'olympic',
-      warmup:'3 min cardio · Hip circles · World\'s greatest stretch 5 each · DB hang clean practice 2×5 · Push press practice 2×5 · Complex ramp-up @ 50% 3×3',
-      moves:[
-        {n:'Sled push sprint',b:'—',f:'Explosive — light load',fl:'4 × 10 yd',sets:4,reps:'10 yd',sec:'Sled primer'},
-        {n:'DB hang clean + push press complex',b:'—',f:'DB complex',fl:'40 lb each',sets:4,reps:'8'},
-        {n:'Hang clean',b:'—',f:'Barbell',fl:'130 lb',sets:4,reps:'4'},
-        {n:'Push press',b:'—',f:'Barbell',fl:'120 lb',sets:4,reps:'5'},
-        {n:'Barbell good morning',b:'—',f:'Barbell',fl:'95 lb',sets:3,reps:'10'},
-        {n:'KB complex',b:'—',f:'Swing+clean+press',fl:'40 lb',sets:3,reps:'5+5+5'},
-        {n:'Hollow body hold',b:'—',f:'BW',fl:'BW',sets:3,reps:'50s',sec:'Core'},
       ]},
     { label:'Lower B — Quad', type:'lower',
       warmup:'2 min cardio · Leg swings · Walking lunge BW 2×10 · Goblet squat light KB 2×10 · Box step-up BW 2×8 each · Bar ramp-up front squat',
@@ -719,6 +710,7 @@ const POOL = {
 
 const DAY_TEMPLATES = [
   {label:'Upper A',slots:[
+    {cat:'oly',sec:'Power primer',lock:true,sets:4,reps:'5',fixed:{n:'Barbell hang clean + push press complex',b:'—',bl:'—',f:'Barbell complex',fl:'115 lb'}},
     {cat:'horizontal_push',sets:4,reps:'8'},{cat:'vertical_push',sets:4,reps:'9'},
     {cat:'chest_acc',sets:4,reps:'15'},{cat:'shoulder_acc',sets:4,reps:'21'},
     {cat:'tricep',sets:3,reps:'12'},
@@ -728,6 +720,7 @@ const DAY_TEMPLATES = [
   {label:'Lower A',slots:[
     {cat:'sled',sec:'Sled primer',sets:4,reps:'15 yd',lock:true,fixed:{n:'Sled harness sprint',b:'—',bl:'—',f:'4×15 yd light',fl:''}},
     {cat:'hinge_primary',sets:4,reps:'10'},{cat:'hinge_secondary',sets:4,reps:'10'},
+    {cat:'oly',lock:true,sets:3,reps:'10',fixed:{n:'Barbell good morning',b:'—',bl:'—',f:'Barbell',fl:'95 lb'}},
     {cat:'hamstring',sets:3,reps:'17'},{cat:'glute',sets:4,reps:'22'},
   ]},
   {label:'Upper B',slots:[
@@ -735,16 +728,8 @@ const DAY_TEMPLATES = [
     {cat:'rear_delt',sets:4,reps:'18'},{cat:'rear_delt',sets:3,reps:'17'},
     {cat:'bicep',sets:3,reps:'14'},{cat:'bicep',sets:4,reps:'18'},
     {cat:'core_antiext',sec:'Core',sets:3,reps:'10/side',lock:true},
+    {cat:'oly',sec:'Finisher',lock:true,sets:3,reps:'5+5+5',fixed:{n:'KB complex (swing+clean+press)',b:'—',bl:'—',f:'KB complex',fl:'40 lb'}},
     {cat:'sled',sec:'Sled',sets:3,reps:'20 yd',lock:true,fixed:{n:'Sled pull rope/harness',b:'—',bl:'—',f:'3×20 yd moderate',fl:''}},
-  ]},
-  {label:'Olympic',slots:[
-    {cat:'sled',sec:'Sled primer',sets:4,reps:'10 yd',lock:true,fixed:{n:'Sled push sprint',b:'—',bl:'—',f:'4×10 yd explosive',fl:''}},
-    {cat:'oly',lock:true,fixed:{n:'DB hang clean + push press complex',b:'—',bl:'—',f:'DB complex',fl:'40 lb each'},sets:4,reps:'8'},
-    {cat:'oly',lock:true,fixed:{n:'Hang clean',b:'—',bl:'—',f:'Barbell',fl:'125 lb'},sets:4,reps:'4'},
-    {cat:'oly',lock:true,fixed:{n:'Push press',b:'—',bl:'—',f:'Barbell',fl:'115 lb'},sets:4,reps:'5'},
-    {cat:'oly',lock:true,fixed:{n:'Barbell good morning',b:'—',bl:'—',f:'Barbell',fl:'90 lb'},sets:3,reps:'10'},
-    {cat:'oly',lock:true,fixed:{n:'KB complex',b:'—',bl:'—',f:'Swing+clean+press',fl:'40 lb'},sets:3,reps:'5+5+5'},
-    {cat:'core_flex',sec:'Core',lock:true,sets:3,reps:'50s',fixed:{n:'Hollow body hold',b:'—',bl:'—',f:'BW',fl:'BW'}},
   ]},
   {label:'Lower B',slots:[
     {cat:'quad_primary',sets:4,reps:'10'},{cat:'quad_primary',sets:4,reps:'10'},
