@@ -1313,17 +1313,15 @@ function saveState(){
 }
 function loadState(){
   try{
-    // Version flag — if app version changed, wipe old cache
-    const appVersion = 'v3-week1-reset';
+    // Version flag — only reset program structure, preserve user data
+    const appVersion = 'v4-4day';
     const storedVersion = localStorage.getItem('wt_version');
     if(storedVersion !== appVersion){
-      // Clear all old state on version change
-      localStorage.removeItem('wt_logs');
-      localStorage.removeItem('wt_eq');
+      // Only wipe program/week — preserve logs, equipment, chicas, api key, tv
       localStorage.removeItem('wt_program');
       localStorage.removeItem('wt_week');
       localStorage.setItem('wt_version', appVersion);
-      return; // use fresh defaults from ST initialization
+      // Still load preserved data below
     }
     const logs=localStorage.getItem('wt_logs');
     const eq=localStorage.getItem('wt_eq');
@@ -1699,6 +1697,9 @@ const ANTHROPIC_KEY = null; // Not used — key stored in localStorage
 
 let CHAT_HISTORY = [];
 
+// Pending coach program update — stored here so button can reference it
+let pendingCoachUpdate = null;
+
 function getApiKey(){ return localStorage.getItem('wt_api_key')||''; }
 
 function buildSystemPrompt(){
@@ -1818,13 +1819,13 @@ async function sendChat(){
     // Parse and show apply button if program changes found
     const update = parseAndApplyProgramUpdate(reply);
     if(update){
+      pendingCoachUpdate = update;
       const applyEl = document.createElement('div');
       applyEl.style.cssText = 'margin:6px 0;padding:10px 12px;background:var(--surface);border:1px solid var(--accent);border-radius:10px;font-size:12px;';
       applyEl.innerHTML = '<div style="color:var(--accent);font-weight:500;margin-bottom:6px;">Program changes ready:</div>' +
         '<div style="color:var(--mid);font-family:var(--font-mono);font-size:11px;margin-bottom:8px;">' +
         update.applied.map(function(a){ return '• ' + a; }).join('<br>') + '</div>' +
         '<button onclick="applyCoachUpdate(this)" style="width:100%;padding:8px;background:var(--accent);color:white;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-weight:500;">Apply to Program tab ↗</button>';
-      applyEl._update = update;
       document.getElementById('chat-messages').appendChild(applyEl);
       applyEl.scrollIntoView({behavior:'smooth', block:'end'});
     }
@@ -1838,15 +1839,15 @@ async function sendChat(){
 }
 
 function applyCoachUpdate(btn){
-  const el = btn.parentElement;
-  if(!el._update) return;
-  ST.program = el._update.prog;
+  if(!pendingCoachUpdate) return;
+  ST.program = pendingCoachUpdate.prog;
   saveState();
   renderProgDay(ST.progDay);
   if(typeof updateDeloadIndicator === 'function') updateDeloadIndicator();
   btn.textContent = 'Applied ✓';
   btn.style.background = '#3a7d3a';
   btn.disabled = true;
+  pendingCoachUpdate = null;
 }
 
 function addBubble(text, type){  const el = document.createElement('div');
