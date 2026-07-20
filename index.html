@@ -159,7 +159,7 @@ textarea { min-height: 80px; resize: vertical; }
     <div class="screen active" id="s-program">
       <div class="screen-header">
         <div><div class="screen-title">WEEK <span id="wk-num">17</span></div><div class="screen-sub">Bands + Free Weights + Sled</div></div>
-        <div class="screen-sub" id="phase-label" style="font-family:var(--font-mono);font-size:9px;color:var(--mid);">BUILD 2025-07-20c</div>
+        <div class="screen-sub" id="phase-label" style="font-family:var(--font-mono);font-size:9px;color:var(--mid);">BUILD 2025-07-20d</div>
       </div>
       <div class="metric-grid">
         <div class="metric"><div class="metric-label">Current week</div><div class="metric-value" id="m-week">17</div></div>
@@ -1832,6 +1832,16 @@ async function sendChat(){
     const blockRegex = /\[\[PROGRAM_UPDATE\]\][\s\S]*?\[\[\/PROGRAM_UPDATE\]\]/;
     const cleanReply = reply.replace(blockRegex, '').trim();
     addBubble(cleanReply, 'ai');
+
+    // CHAR DEBUG — show exact char codes around first [ in reply
+    const firstBracket = reply.indexOf('[');
+    const charDebug = firstBracket !== -1
+      ? 'First [ at pos ' + firstBracket + ', chars: ' + Array.from(reply.slice(firstBracket, firstBracket+4)).map(function(c){return c.charCodeAt(0);}).join(',')
+      : 'No [ found in reply';
+    const dbg0 = document.createElement('div');
+    dbg0.style.cssText = 'margin:4px 0;padding:6px 8px;background:#1a1a3e;color:#aaaaff;font-family:monospace;font-size:10px;border-radius:6px;';
+    dbg0.textContent = 'CHAR DEBUG: ' + charDebug + ' | replyLen=' + reply.length;
+    document.getElementById('chat-messages').appendChild(dbg0);
 
     // Parse update using regex
     const blockMatch = reply.match(/\[\[PROGRAM_UPDATE\]\]([\s\S]*?)\[\[\/PROGRAM_UPDATE\]\]/);
