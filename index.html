@@ -159,7 +159,7 @@ textarea { min-height: 80px; resize: vertical; }
     <div class="screen active" id="s-program">
       <div class="screen-header">
         <div><div class="screen-title">WEEK <span id="wk-num">17</span></div><div class="screen-sub">Bands + Free Weights + Sled</div></div>
-        <div class="screen-sub" id="phase-label" style="font-family:var(--font-mono);font-size:9px;color:var(--mid);">BUILD 2025-07-20e</div>
+        <div class="screen-sub" id="phase-label" style="font-family:var(--font-mono);font-size:9px;color:var(--mid);">BUILD 2025-07-20f</div>
       </div>
       <div class="metric-grid">
         <div class="metric"><div class="metric-label">Current week</div><div class="metric-value" id="m-week">17</div></div>
@@ -1906,20 +1906,25 @@ function applyCoachUpdate(btn){
   pendingCoachUpdate = null;
 }
 
-function addBubble(text, type){  const el = document.createElement('div');
+function addBubble(text, type){
+  var msgs = document.getElementById('chat-messages');
+  if(!msgs) return null;
+  var el = document.createElement('div');
   el.className = 'chat-bubble chat-' + type;
   el.textContent = text;
-  safeAppendChat(el);
-  el.scrollIntoView({behavior:'smooth', block:'end'});
+  msgs.appendChild(el);
+  try{ el.scrollIntoView({behavior:'smooth', block:'end'}); }catch(ex){}
   return el;
 }
 
 function addThinking(){
-  const el = document.createElement('div');
+  var msgs = document.getElementById('chat-messages');
+  if(!msgs) return {remove:function(){}};
+  var el = document.createElement('div');
   el.className = 'chat-thinking';
   el.textContent = 'Coach is thinking...';
-  safeAppendChat(el);
-  el.scrollIntoView({behavior:'smooth', block:'end'});
+  msgs.appendChild(el);
+  try{ el.scrollIntoView({behavior:'smooth', block:'end'}); }catch(ex){}
   return el;
 }
 
@@ -1960,47 +1965,6 @@ function initChat(){
     msgs.appendChild(wrap);
   } else {
     addBubble('Week ' + ST.week + ' loaded. What do you need?', 'ai');
-  }
-}
-
-async function sendChat(){
-  const apiKey = getApiKey();
-  if(!apiKey){ initChat(); return; }
-  const input = document.getElementById('chat-input');
-  const text = input.value.trim();
-  if(!text) return;
-  input.value = '';
-  input.style.height = 'auto';
-  addBubble(text, 'user');
-  CHAT_HISTORY.push({role:'user', content:text});
-  const thinking = addThinking();
-  try{
-    const r = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
-      body:JSON.stringify({
-        model:'claude-sonnet-4-5',
-        max_tokens:1024,
-        system: buildSystemPrompt(),
-        messages: CHAT_HISTORY
-      })
-    });
-    const d = await r.json();
-    thinking.remove();
-    if(d.error){ addBubble('Error: ' + d.error.message, 'ai'); CHAT_HISTORY.pop(); return; }
-    const reply = d.content.filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
-    CHAT_HISTORY.push({role:'assistant', content:reply});
-    addBubble(reply, 'ai');
-    if(CHAT_HISTORY.length > 20) CHAT_HISTORY = CHAT_HISTORY.slice(-20);
-  }catch(e){
-    thinking.remove();
-    addBubble('Could not reach coach. Check your connection.', 'ai');
-    CHAT_HISTORY.pop();
   }
 }
 
