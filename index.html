@@ -1830,7 +1830,24 @@ async function sendChat(){
     const cleanReply = stripProgramBlock(reply);
     addBubble(cleanReply, 'ai');
 
-    // Parse and show apply button if program changes found
+    // DEBUG: show raw block detection in chat temporarily
+    const hasStart = reply.indexOf('[[PROGRAM_UPDATE]]') !== -1;
+    const hasEnd = reply.indexOf('[[/PROGRAM_UPDATE]]') !== -1;
+    if(hasStart || hasEnd){
+      const dbg = document.createElement('div');
+      dbg.style.cssText = 'margin:4px 0;padding:8px;background:#1a1a2e;color:#00ff88;font-family:monospace;font-size:10px;border-radius:6px;white-space:pre-wrap;';
+      const jsonStart = reply.indexOf('[[PROGRAM_UPDATE]]');
+      const jsonEnd = reply.indexOf('[[/PROGRAM_UPDATE]]');
+      const block = jsonStart !== -1 && jsonEnd !== -1 ? reply.slice(jsonStart, jsonEnd + 19) : 'Block incomplete';
+      dbg.textContent = 'DEBUG — Block found: ' + hasStart + '/' + hasEnd + '\n' + block;
+      document.getElementById('chat-messages').appendChild(dbg);
+    } else {
+      const dbg = document.createElement('div');
+      dbg.style.cssText = 'margin:4px 0;padding:8px;background:#2e1a1a;color:#ff6666;font-family:monospace;font-size:10px;border-radius:6px;';
+      dbg.textContent = 'DEBUG — No [[PROGRAM_UPDATE]] block found in reply. Reply length: ' + reply.length + '\nLast 200 chars: ' + reply.slice(-200);
+      document.getElementById('chat-messages').appendChild(dbg);
+    }
+
     const update = parseAndApplyProgramUpdate(reply);
     if(update){
       pendingCoachUpdate = update;
