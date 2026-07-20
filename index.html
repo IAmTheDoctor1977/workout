@@ -159,7 +159,7 @@ textarea { min-height: 80px; resize: vertical; }
     <div class="screen active" id="s-program">
       <div class="screen-header">
         <div><div class="screen-title">WEEK <span id="wk-num">17</span></div><div class="screen-sub">Bands + Free Weights + Sled</div></div>
-        <div class="screen-sub" id="phase-label" style="font-family:var(--font-mono);font-size:9px;color:var(--mid);">BUILD 2025-07-20</div>
+        <div class="screen-sub" id="phase-label" style="font-family:var(--font-mono);font-size:9px;color:var(--mid);">BUILD 2025-07-20b</div>
       </div>
       <div class="metric-grid">
         <div class="metric"><div class="metric-label">Current week</div><div class="metric-value" id="m-week">17</div></div>
@@ -1718,32 +1718,29 @@ function buildSystemPrompt(){
     return 'Week ' + l.week + ' ' + l.day + ': ' + l.result + (l.notes ? ' — ' + l.notes : '');
   }).join('\n');
 
-  return 'You are the personal strength coach for Ife (Ifeoluwa Togun), embedded in the Togun Gym workout app.\n\n' +
-    'CURRENT PROGRAM — Week ' + weekNum + ':\n' + progSummary + '\n\n' +
-    'RECENT SESSION LOGS:\n' + (recentLogs||'No logs yet.') + '\n\n' +
-    'PROGRAM RULES:\n' +
-    '- Structure: Upper A / Lower A / Upper B / Lower B (4 days)\n' +
-    '- DB bench is primary chest press — never barbell bench (no spotter)\n' +
-    '- Hex bar for primary deadlift\n' +
-    '- DB Romanian deadlift is permanent RDL\n' +
-    '- Progression: tension OR reps, never both\n' +
-    '- RPE 8. Deload every 4th week. Sets capped at 4.\n' +
-    '- Core only on upper days. Sled blended across days.\n' +
-    'EQUIPMENT: Bands 10-300lb, DBs 15-100lb pairs, KBs 10-70lb, barbell+bumpers, hex bar, cable pulley (Mikolo), sled, farmer bars, weight vest, pull-up bar, dip station.\n\n' +
-    'CRITICAL — PROGRAM UPDATES:\n' +
-    'When the user asks you to change anything in their program (hold a lift, change weight, change reps, swap exercise, generate next week), you MUST include a JSON block at the very end of your response in this EXACT format with NO variation:\n' +
+  return '# OUTPUT FORMAT — READ FIRST\n\n' +
+    'Whenever you modify, adjust, hold, or generate program changes, your response MUST end with this exact block:\n\n' +
     '[[PROGRAM_UPDATE]]\n' +
-    '{"changes":[{"day":0,"moveName":"exact movement name","field":"fl","value":"75 lb"}]}\n' +
+    '{"changes":[{"day":0,"moveName":"exact name from program","field":"fl","value":"75 lb"}]}\n' +
     '[[/PROGRAM_UPDATE]]\n\n' +
-    'RULES FOR THE JSON BLOCK:\n' +
-    '- day is 0-indexed: 0=Upper A, 1=Lower A, 2=Upper B, 3=Lower B\n' +
-    '- moveName must match the program exactly (e.g. "Barbell good morning" not "good morning")\n' +
-    '- field: "fl" for free weight load, "b" for band load, "reps" for reps, "sets" for sets\n' +
-    '- value MUST always include the unit: "75 lb" not "75". For reps use "10" not "10 reps".\n' +
-    '- Use "HOLD" as value to flag no change\n' +
-    '- The [[PROGRAM_UPDATE]] and [[/PROGRAM_UPDATE]] tags must be on their own lines\n' +
-    '- NEVER skip this block when making any program modification\n\n' +
-    'Be direct, concise, and actionable. Ife also plays pickleball 4 days/week.';
+    'No exceptions. No skipping. Even if you already described the change in text, still append the block.\n' +
+    'Values always include units: "75 lb" not "75". Day index: 0=Upper A, 1=Lower A, 2=Upper B, 3=Lower B.\n' +
+    'Fields: fl=free weight load, b=band load, reps=reps, sets=sets.\n\n' +
+    '---\n\n' +
+    '# CONTEXT\n\n' +
+    'You are the strength coach for Ife (Ifeoluwa Togun). Togun Gym app, Week ' + weekNum + '.\n\n' +
+    'CURRENT PROGRAM:\n' + progSummary + '\n\n' +
+    'RECENT LOGS:\n' + (recentLogs||'No logs yet.') + '\n\n' +
+    'RULES:\n' +
+    '- Structure: Upper A / Lower A / Upper B / Lower B\n' +
+    '- DB bench only — never barbell bench (trains alone, no spotter)\n' +
+    '- Hex bar for deadlift. DB Romanian deadlift is permanent.\n' +
+    '- Progression: tension OR reps, never both same week\n' +
+    '- RPE 8. Sets max 4. Deload every 4th week.\n' +
+    '- Core on upper days only. Sled blended across days.\n' +
+    'EQUIPMENT: Bands 10-300lb, DBs 15-100lb, KBs 10-70lb, barbell, hex bar, Mikolo cable pulley, sled, farmer bars, pull-up bar, dip station.\n' +
+    'Ife also plays pickleball 4 days/week — additional load, not recovery.\n\n' +
+    'Be direct and concise.';
 }
 
 function parseAndApplyProgramUpdate(reply){
@@ -1804,6 +1801,11 @@ async function sendChat(){
   addBubble(text, 'user');
   CHAT_HISTORY.push({role:'user', content:text});
   const thinking = addThinking();
+
+  // Build messages — append reminder to last user turn so model can't ignore it
+  const reminder = '\n\n[If this involves any program change, end your response with [[PROGRAM_UPDATE]]{"changes":[...]}[[/PROGRAM_UPDATE]]]';
+  const apiMessages = CHAT_HISTORY.slice(0,-1).concat([{role:'user', content: text + reminder}]);
+
   try{
     const r = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
@@ -1817,7 +1819,7 @@ async function sendChat(){
         model:'claude-sonnet-4-5',
         max_tokens:2048,
         system: buildSystemPrompt(),
-        messages: CHAT_HISTORY
+        messages: apiMessages
       })
     });
     const d = await r.json();
