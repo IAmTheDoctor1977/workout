@@ -1716,23 +1716,140 @@ function buildSystemPrompt(){
   const recentLogs = ST.logs.slice(0,5).map(function(l){
     return 'Week ' + l.week + ' ' + l.day + ': ' + l.result + (l.notes ? ' — ' + l.notes : '');
   }).join('\n');
+
   return 'You are the personal strength coach for Ife (Ifeoluwa Togun), embedded in the Togun Gym workout app.\n\n' +
     'CURRENT PROGRAM — Week ' + weekNum + ':\n' + progSummary + '\n\n' +
     'RECENT SESSION LOGS:\n' + (recentLogs||'No logs yet.') + '\n\n' +
     'PROGRAM RULES:\n' +
-    '- Structure: Upper A / Lower A / Upper B / Olympic / Lower B\n' +
+    '- Structure: Upper A / Lower A / Upper B / Lower B (4 days)\n' +
     '- DB bench is primary chest press — never barbell bench (no spotter)\n' +
     '- Hex bar for primary deadlift\n' +
     '- DB Romanian deadlift is permanent RDL\n' +
     '- Progression: tension OR reps, never both\n' +
-    '- RPE 8. Deload every 4th week.\n' +
+    '- RPE 8. Deload every 4th week. Sets capped at 4.\n' +
     '- Core only on upper days. Sled blended across days.\n' +
     'EQUIPMENT: Bands 10-300lb, DBs 15-100lb pairs, KBs 10-70lb, barbell+bumpers, hex bar, cable pulley (Mikolo), sled, farmer bars, weight vest, pull-up bar, dip station.\n\n' +
+    'CRITICAL — PROGRAM UPDATES:\n' +
+    'When the user asks you to change anything in their program (hold a lift, change weight, change reps, swap exercise, generate next week), you MUST include a JSON block at the very end of your response in this exact format:\n' +
+    '[[PROGRAM_UPDATE]]\n' +
+    '{"changes":[{"day":0,"moveName":"exact movement name","field":"fl","value":"new value"},...]}\n' +
+    '[[/PROGRAM_UPDATE]]\n\n' +
+    'Field options: "fl" = free weight load, "b" = band load, "reps" = rep target, "sets" = set count.\n' +
+    'day is 0-indexed (0=Upper A, 1=Lower A, 2=Upper B, 3=Lower B).\n' +
+    'moveName must match exactly. Use "HOLD" as value to flag a hold (no change applied).\n' +
+    'For generating a full new week, include all changed movements.\n' +
+    'Always include the JSON block when making ANY program modification. Never skip it.\n\n' +
     'Be direct, concise, and actionable. Ife also plays pickleball 4 days/week.';
 }
 
-function addBubble(text, type){
-  const el = document.createElement('div');
+function parseAndApplyProgramUpdate(reply){
+  const start = reply.indexOf('[[PROGRAM_UPDATE]]');
+  const end = reply.indexOf('[[/PROGRAM_UPDATE]]');
+  if(start === -1 || end === -1) return null;
+
+  const jsonStr = reply.slice(start + 18, end).trim();
+  let changes;
+  try{ changes = JSON.parse(jsonStr).changes; }
+  catch(e){ return null; }
+  if(!changes || !changes.length) return null;
+
+  // Apply changes to program
+  const prog = JSON.parse(JSON.stringify(ST.program || W17));
+  const applied = [];
+
+  changes.forEach(function(c){
+    if(c.value === 'HOLD') return; // flag only, no change
+    const day = prog[c.day];
+    if(!day) return;
+    const move = day.moves.find(function(m){ return m.n === c.moveName; });
+    if(!move) return;
+    const oldVal = move[c.field];
+    move[c.field] = c.value;
+    applied.push(c.moveName + ' ' + c.field + ': ' + oldVal + ' → ' + c.value);
+  });
+
+  if(!applied.length) return null;
+  return { prog, applied };
+}
+
+function stripProgramBlock(text){
+  const start = text.indexOf('[[PROGRAM_UPDATE]]');
+  if(start === -1) return text;
+  return text.slice(0, start).trim();
+}
+
+async function sendChat(){
+  const apiKey = getApiKey();
+  if(!apiKey){ initChat(); return; }
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+  addBubble(text, 'user');
+  CHAT_HISTORY.push({role:'user', content:text});
+  const thinking = addThinking();
+  try{
+    const r = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-5',
+        max_tokens:2048,
+        system: buildSystemPrompt(),
+        messages: CHAT_HISTORY
+      })
+    });
+    const d = await r.json();
+    thinking.remove();
+    if(d.error){ addBubble('Error: ' + d.error.message, 'ai'); CHAT_HISTORY.pop(); return; }
+    const reply = d.content.filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
+    CHAT_HISTORY.push({role:'assistant', content:reply});
+
+    // Show clean reply (strip JSON block)
+    const cleanReply = stripProgramBlock(reply);
+    addBubble(cleanReply, 'ai');
+
+    // Parse and show apply button if program changes found
+    const update = parseAndApplyProgramUpdate(reply);
+    if(update){
+      const applyEl = document.createElement('div');
+      applyEl.style.cssText = 'margin:6px 0;padding:10px 12px;background:var(--surface);border:1px solid var(--accent);border-radius:10px;font-size:12px;';
+      applyEl.innerHTML = '<div style="color:var(--accent);font-weight:500;margin-bottom:6px;">Program changes ready:</div>' +
+        '<div style="color:var(--mid);font-family:var(--font-mono);font-size:11px;margin-bottom:8px;">' +
+        update.applied.map(function(a){ return '• ' + a; }).join('<br>') + '</div>' +
+        '<button onclick="applyCoachUpdate(this)" style="width:100%;padding:8px;background:var(--accent);color:white;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-weight:500;">Apply to Program tab ↗</button>';
+      applyEl._update = update;
+      document.getElementById('chat-messages').appendChild(applyEl);
+      applyEl.scrollIntoView({behavior:'smooth', block:'end'});
+    }
+
+    if(CHAT_HISTORY.length > 20) CHAT_HISTORY = CHAT_HISTORY.slice(-20);
+  }catch(e){
+    thinking.remove();
+    addBubble('Could not reach coach. Check your connection.', 'ai');
+    CHAT_HISTORY.pop();
+  }
+}
+
+function applyCoachUpdate(btn){
+  const el = btn.parentElement;
+  if(!el._update) return;
+  ST.program = el._update.prog;
+  saveState();
+  renderProgDay(ST.progDay);
+  if(typeof updateDeloadIndicator === 'function') updateDeloadIndicator();
+  btn.textContent = 'Applied ✓';
+  btn.style.background = '#3a7d3a';
+  btn.disabled = true;
+}
+
+function addBubble(text, type){  const el = document.createElement('div');
   el.className = 'chat-bubble chat-' + type;
   el.textContent = text;
   document.getElementById('chat-messages').appendChild(el);
