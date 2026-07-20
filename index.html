@@ -1731,19 +1731,23 @@ function buildSystemPrompt(){
     '- Core only on upper days. Sled blended across days.\n' +
     'EQUIPMENT: Bands 10-300lb, DBs 15-100lb pairs, KBs 10-70lb, barbell+bumpers, hex bar, cable pulley (Mikolo), sled, farmer bars, weight vest, pull-up bar, dip station.\n\n' +
     'CRITICAL — PROGRAM UPDATES:\n' +
-    'When the user asks you to change anything in their program (hold a lift, change weight, change reps, swap exercise, generate next week), you MUST include a JSON block at the very end of your response in this exact format:\n' +
+    'When the user asks you to change anything in their program (hold a lift, change weight, change reps, swap exercise, generate next week), you MUST include a JSON block at the very end of your response in this EXACT format with NO variation:\n' +
     '[[PROGRAM_UPDATE]]\n' +
-    '{"changes":[{"day":0,"moveName":"exact movement name","field":"fl","value":"new value"},...]}\n' +
+    '{"changes":[{"day":0,"moveName":"exact movement name","field":"fl","value":"75 lb"}]}\n' +
     '[[/PROGRAM_UPDATE]]\n\n' +
-    'Field options: "fl" = free weight load, "b" = band load, "reps" = rep target, "sets" = set count.\n' +
-    'day is 0-indexed (0=Upper A, 1=Lower A, 2=Upper B, 3=Lower B).\n' +
-    'moveName must match exactly. Use "HOLD" as value to flag a hold (no change applied).\n' +
-    'For generating a full new week, include all changed movements.\n' +
-    'Always include the JSON block when making ANY program modification. Never skip it.\n\n' +
+    'RULES FOR THE JSON BLOCK:\n' +
+    '- day is 0-indexed: 0=Upper A, 1=Lower A, 2=Upper B, 3=Lower B\n' +
+    '- moveName must match the program exactly (e.g. "Barbell good morning" not "good morning")\n' +
+    '- field: "fl" for free weight load, "b" for band load, "reps" for reps, "sets" for sets\n' +
+    '- value MUST always include the unit: "75 lb" not "75". For reps use "10" not "10 reps".\n' +
+    '- Use "HOLD" as value to flag no change\n' +
+    '- The [[PROGRAM_UPDATE]] and [[/PROGRAM_UPDATE]] tags must be on their own lines\n' +
+    '- NEVER skip this block when making any program modification\n\n' +
     'Be direct, concise, and actionable. Ife also plays pickleball 4 days/week.';
 }
 
 function parseAndApplyProgramUpdate(reply){
+  // Try both bracket styles and handle whitespace/newline variations
   const start = reply.indexOf('[[PROGRAM_UPDATE]]');
   const end = reply.indexOf('[[/PROGRAM_UPDATE]]');
   if(start === -1 || end === -1) return null;
@@ -1751,22 +1755,32 @@ function parseAndApplyProgramUpdate(reply){
   const jsonStr = reply.slice(start + 18, end).trim();
   let changes;
   try{ changes = JSON.parse(jsonStr).changes; }
-  catch(e){ return null; }
+  catch(e){ console.log('Parse error:', e, 'JSON was:', jsonStr); return null; }
   if(!changes || !changes.length) return null;
 
-  // Apply changes to program
   const prog = JSON.parse(JSON.stringify(ST.program || W17));
   const applied = [];
 
   changes.forEach(function(c){
-    if(c.value === 'HOLD') return; // flag only, no change
+    if(c.value === 'HOLD') return;
     const day = prog[c.day];
     if(!day) return;
-    const move = day.moves.find(function(m){ return m.n === c.moveName; });
-    if(!move) return;
+
+    // Fuzzy match — case insensitive, partial name match
+    const needle = c.moveName.toLowerCase().trim();
+    const move = day.moves.find(function(m){
+      const mn = m.n.toLowerCase();
+      return mn === needle || mn.includes(needle) || needle.includes(mn);
+    });
+    if(!move){ console.log('Move not found:', c.moveName, 'in day', c.day); return; }
+
+    // Auto-fix value: if numeric only, append ' lb'
+    let val = String(c.value).trim();
+    if(/^\d+(\.\d+)?$/.test(val)) val = val + ' lb';
+
     const oldVal = move[c.field];
-    move[c.field] = c.value;
-    applied.push(c.moveName + ' ' + c.field + ': ' + oldVal + ' → ' + c.value);
+    move[c.field] = val;
+    applied.push(move.n + ' → ' + val);
   });
 
   if(!applied.length) return null;
