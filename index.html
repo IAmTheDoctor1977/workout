@@ -159,7 +159,7 @@ textarea { min-height: 80px; resize: vertical; }
     <div class="screen active" id="s-program">
       <div class="screen-header">
         <div><div class="screen-title">WEEK <span id="wk-num">17</span></div><div class="screen-sub">Bands + Free Weights + Sled</div></div>
-        <div class="screen-sub" id="phase-label" style="font-family:var(--font-mono);font-size:9px;color:var(--mid);">BUILD 2025-07-25</div>
+        <div class="screen-sub" id="phase-label" style="font-family:var(--font-mono);font-size:9px;color:var(--mid);">BUILD 2025-07-25b</div>
       </div>
       <div class="metric-grid">
         <div class="metric"><div class="metric-label">Current week</div><div class="metric-value" id="m-week">17</div></div>
@@ -1714,50 +1714,44 @@ function getApiKey(){ return localStorage.getItem('wt_api_key')||''; }
 function buildSystemPrompt(){
   const prog = ST.program || W17;
   const weekNum = ST.week;
-  const progSummary = prog.map(function(day,i){
-    const moves = day.moves.map(function(m){
-      return '  [' + i + '.' + day.moves.indexOf(m) + '] ' + m.n + ': ' + m.sets + 'x' + m.reps +
-        (m.fl && m.fl!=='') ? ' @ ' + m.fl : '' +
-        (m.b && m.b!=='—') ? ' (band: ' + m.b + ')' : '';
+  const progSummary = prog.map(function(day,di){
+    const moves = day.moves.map(function(m,mi){
+      var s = '  [' + di + ',' + mi + '] ' + m.n + ': ' + m.sets + 'x' + m.reps;
+      if(m.fl && m.fl !== '') s += ' @ ' + m.fl;
+      if(m.b && m.b !== '—') s += ' (band: ' + m.b + ')';
+      return s;
     }).join('\n');
-    return 'Day ' + i + ' — ' + day.label + ':\n' + moves;
+    return 'Day ' + di + ' — ' + day.label + ':\n' + moves;
   }).join('\n\n');
 
-  const bwSummary = TV_ST.bwDays.map(function(day,i){
-    return 'BW Day ' + i + ' — ' + day.label + ':\n' +
-      day.exercises.map(function(ex,j){ return '  [bw.' + i + '.' + j + '] ' + ex.n + ': ' + ex.sets + 'x' + ex.reps; }).join('\n');
+  const bwSummary = (TV_ST.bwDays||[]).map(function(day,di){
+    return 'BW Day ' + di + ' — ' + day.label + ':\n' +
+      (day.exercises||[]).map(function(ex,ei){
+        return '  [bw,' + di + ',' + ei + '] ' + ex.n + ': ' + ex.sets + 'x' + ex.reps;
+      }).join('\n');
   }).join('\n\n');
 
   const recentLogs = ST.logs.slice(0,3).map(function(l){
     return 'Week ' + l.week + ' ' + l.day + ': ' + l.result + (l.notes ? ' — ' + l.notes : '');
   }).join('\n');
 
-  return '# OUTPUT FORMAT — READ THIS FIRST\n\n' +
-    'When making ANY change to the program or TV tab, end your response with:\n\n' +
+  return '# OUTPUT FORMAT — READ FIRST\n\n' +
+    'When making ANY change, end your response with:\n\n' +
     '[[PROGRAM_UPDATE]]\n' +
-    '{"ops":[{"op":"set","target":"prog","day":0,"move":0,"field":"fl","value":"75 lb"},{"op":"rename","target":"prog","day":0,"move":2,"value":"New Name"},{"op":"add","target":"prog","day":1,"exercise":{"n":"Name","b":"—","f":"Name","fl":"45 lb","sets":3,"reps":"10"}},{"op":"remove","target":"prog","day":1,"move":3},{"op":"set","target":"bw","day":0,"move":1,"field":"reps","value":"12–15"}]}\n' +
+    '{"ops":[{"op":"set","target":"prog","day":2,"move":7,"field":"reps","value":"8+8"},{"op":"rename","target":"prog","day":2,"move":7,"value":"KB clean and press"}]}\n' +
     '[[/PROGRAM_UPDATE]]\n\n' +
-    'Operation types:\n' +
-    '- "set": change a field value. Fields: n(name), fl(free weight), b(band), reps, sets, f(movement label), cue, sec\n' +
-    '- "rename": shorthand to change movement name (field "n")\n' +
-    '- "add": add a new exercise to a day\n' +
-    '- "remove": remove exercise at move index\n' +
-    'Targets: "prog" for main program, "bw" for TV bodyweight tab\n' +
-    'day and move are 0-indexed. Always include units in values: "75 lb" not "75".\n' +
-    'NEVER skip this block when making any change. NEVER.\n\n' +
+    'op types: "set" (change a field), "rename" (change movement name), "add" (add exercise), "remove" (remove exercise)\n' +
+    'target: "prog" for main program, "bw" for TV bodyweight tab\n' +
+    'day and move are the EXACT indices shown in brackets [day,move] in the program below.\n' +
+    'field options: fl (free weight load), b (band load), reps, sets, n (name), f (label), cue, sec\n' +
+    'Always include units in values: "75 lb" not "75". NEVER skip this block for any change.\n\n' +
     '---\n\n' +
-    '# CURRENT PROGRAM (Week ' + weekNum + ')\n\n' +
-    progSummary + '\n\n' +
-    '# TV BODYWEIGHT\n\n' + bwSummary + '\n\n' +
-    '# RECENT LOGS\n' + (recentLogs||'None') + '\n\n' +
-    '# RULES\n' +
-    '- 4-day split: Upper A(0) / Lower A(1) / Upper B(2) / Lower B(3)\n' +
-    '- DB bench only — never barbell bench (no spotter)\n' +
-    '- Hex bar for deadlift. DB RDL permanent.\n' +
-    '- Progression: tension OR reps, never both. RPE 8. Sets max 4. Deload week 4.\n' +
-    '- Core on upper days only. Sled across all days.\n' +
-    'EQUIPMENT: Bands 10-300lb, DBs 15-100lb, KBs 10-70lb, barbell, hex bar, Mikolo cable pulley, sled, farmer bars, pull-up bar, dip station, TRX suspension trainer.\n' +
-    'Ife also plays pickleball 4 days/week — additional load.\n\n' +
+    'COACH FOR: Ife (Ifeoluwa Togun) — Week ' + weekNum + '\n\n' +
+    'PROGRAM:\n' + progSummary + '\n\n' +
+    'TV BODYWEIGHT:\n' + bwSummary + '\n\n' +
+    'RECENT LOGS:\n' + (recentLogs||'None') + '\n\n' +
+    'RULES: 4-day split Day0=Upper A, Day1=Lower A, Day2=Upper B, Day3=Lower B. DB bench only (no spotter). Hex bar DL. DB RDL permanent. RPE 8. Sets max 4. Deload week 4. Core on upper days only.\n' +
+    'EQUIPMENT: Bands, DBs 15-100lb, KBs 10-70lb, barbell, hex bar, Mikolo cable, sled, TRX. Pickleball 4x/week additional load.\n' +
     'Be direct and concise.';
 }
 
@@ -1931,11 +1925,27 @@ function safeAppendChat(el){
 
 function applyCoachUpdate(btn){
   if(!pendingCoachUpdate) return;
-  if(pendingCoachUpdate.prog){ ST.program = pendingCoachUpdate.prog; saveState(); renderProgDay(ST.progDay); if(typeof updateDeloadIndicator==='function') updateDeloadIndicator(); }
-  if(pendingCoachUpdate.bw){ TV_ST.bwDays = pendingCoachUpdate.bw; saveTVState(); if(typeof renderBWDay==='function') renderBWDay(); }
-  btn.textContent = 'Applied \u2713';
+  if(pendingCoachUpdate.prog){
+    ST.program = pendingCoachUpdate.prog;
+    saveState();
+    // Force re-render all program days
+    if(typeof renderProgChips === 'function') renderProgChips();
+    renderProgDay(ST.progDay);
+    if(typeof updateDeloadIndicator === 'function') updateDeloadIndicator();
+  }
+  if(pendingCoachUpdate.bw){
+    TV_ST.bwDays = pendingCoachUpdate.bw;
+    saveTVState();
+    if(typeof renderBWDay === 'function') renderBWDay();
+  }
+  btn.textContent = 'Applied \u2713 — check Program tab';
   btn.style.background = '#3a7d3a';
   btn.disabled = true;
+  // Briefly switch to program tab so change is visible
+  setTimeout(function(){
+    var progBtn = document.querySelector('.nav-btn:first-child');
+    if(progBtn) progBtn.click();
+  }, 800);
   pendingCoachUpdate = null;
 }
 
