@@ -159,7 +159,7 @@ textarea { min-height: 80px; resize: vertical; }
     <div class="screen active" id="s-program">
       <div class="screen-header">
         <div><div class="screen-title">WEEK <span id="wk-num">17</span></div><div class="screen-sub">Bands + Free Weights + Sled</div></div>
-        <div class="screen-sub" id="phase-label" style="font-family:var(--font-mono);font-size:9px;color:var(--mid);">BUILD 2025-07-25d</div>
+        <div class="screen-sub" id="phase-label" style="font-family:var(--font-mono);font-size:9px;color:var(--mid);">BUILD 2025-07-25c</div>
       </div>
       <div class="metric-grid">
         <div class="metric"><div class="metric-label">Current week</div><div class="metric-value" id="m-week">17</div></div>
@@ -232,8 +232,8 @@ textarea { min-height: 80px; resize: vertical; }
       <div class="screen-header"><div class="screen-title">GENERATE <span>WEEK</span></div></div>
       <div class="card">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div class="form-group" style="margin:0"><label class="form-label">Generating week</label><input type="number" id="gen-week" value="2" min="1"></div>
-          <div class="form-group" style="margin:0"><label class="form-label">Based on week</label><input type="number" id="gen-from" value="1" min="1"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Generating week</label><input type="number" id="gen-week" value="3" min="1"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Based on week</label><input type="number" id="gen-from" value="2" min="1"></div>
         </div>
         <div class="form-group" style="margin-top:10px"><label class="form-label">Performance last week</label>
           <select id="gen-perf">
@@ -772,7 +772,7 @@ function buildRandDay(tmpl){
 }
 
 let ST = {
-  week:1, progDay:0, randDay:0,
+  week:2, progDay:0, randDay:0,
   program: JSON.parse(JSON.stringify(W17)),
   logs:[...SEED_LOGS],
   eq:[...DEFAULT_EQ],
@@ -1529,35 +1529,20 @@ let TV_ST = {
 
 function loadTVState(){
   try{
-    const tvVersion = 'tv-v2-4day'; // bump this when BW_PROGRAM structure changes
     const s = localStorage.getItem('wt_tv');
     if(s){
       const d = JSON.parse(s);
       TV_ST.coreDay = d.coreDay||0;
+      TV_ST.bwWeek = d.bwWeek||1;
+      TV_ST.bwDayIdx = d.bwDayIdx||0;
       TV_ST.bwLogs = d.bwLogs||[];
-      // Only restore bwDays if TV version matches — otherwise use fresh BW_PROGRAM
-      if(d.tvVersion === tvVersion){
-        TV_ST.bwWeek = d.bwWeek||2;
-        TV_ST.bwDayIdx = d.bwDayIdx||0;
-        if(d.bwDays) TV_ST.bwDays = d.bwDays;
-      } else {
-        // Version changed — reset bwDays and week from new constant, preserve logs
-        TV_ST.bwDays = JSON.parse(JSON.stringify(BW_PROGRAM.days));
-        TV_ST.bwWeek = BW_PROGRAM.week;
-        TV_ST.bwDayIdx = 0;
-      }
+      if(d.bwDays) TV_ST.bwDays = d.bwDays;
     }
-    // Always save with current version
-    saveTVState();
   }catch(e){}
 }
 
 function saveTVState(){
-  try{
-    const tvVersion = 'tv-v2-4day';
-    const data = Object.assign({}, TV_ST, {tvVersion: tvVersion});
-    localStorage.setItem('wt_tv', JSON.stringify(data));
-  }catch(e){}
+  try{ localStorage.setItem('wt_tv', JSON.stringify(TV_ST)); }catch(e){}
 }
 
 function setTVBlock(block, btn){
