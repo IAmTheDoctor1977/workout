@@ -159,7 +159,7 @@ textarea { min-height: 80px; resize: vertical; }
     <div class="screen active" id="s-program">
       <div class="screen-header">
         <div><div class="screen-title">WEEK <span id="wk-num">17</span></div><div class="screen-sub">Bands + Free Weights + Sled</div></div>
-        <div class="screen-sub" id="phase-label" style="font-family:var(--font-mono);font-size:9px;color:var(--mid);">BUILD 2025-07-25b</div>
+        <div class="screen-sub" id="phase-label" style="font-family:var(--font-mono);font-size:9px;color:var(--mid);">BUILD 2025-07-25c</div>
       </div>
       <div class="metric-grid">
         <div class="metric"><div class="metric-label">Current week</div><div class="metric-value" id="m-week">17</div></div>
@@ -466,7 +466,7 @@ const CHECKPOINTS = {
         {n:'Cable curl (bar)',b:'105 lb',f:'Cable curl (bar)',fl:'30 lb',sets:3,reps:'14'},
         {n:'Cable single-arm curl',b:'95 lb',f:'Cable single-arm curl',fl:'15 lb',sets:4,reps:'19'},
         {n:'Dead bug',b:'BW',f:'Dead bug',fl:'BW',sets:3,reps:'10/side',sec:'Core'},
-        {n:'KB complex (swing+clean+press)',b:'—',f:'KB complex',fl:'40 lb',sets:3,reps:'5+5+5',sec:'Finisher'},
+        {n:'KB complex (swing+clean+press)',b:'—',f:'KB complex',fl:'53 lb',sets:3,reps:'5+5',sec:'Finisher'},
         {n:'Sled pull',b:'—',f:'3 × 20 yd rope/harness',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
       ]},
     { label:'Lower B — Quad', type:'lower',
@@ -748,7 +748,7 @@ const DAY_TEMPLATES = [
     {cat:'rear_delt',sets:4,reps:'18'},{cat:'rear_delt',sets:3,reps:'17'},
     {cat:'bicep',sets:3,reps:'14'},{cat:'bicep',sets:4,reps:'18'},
     {cat:'core_antiext',sec:'Core',sets:3,reps:'10/side',lock:true},
-    {cat:'oly',sec:'Finisher',lock:true,sets:3,reps:'5+5+5',fixed:{n:'KB complex (swing+clean+press)',b:'—',bl:'—',f:'KB complex',fl:'40 lb'}},
+    {cat:'oly',sec:'Finisher',lock:true,sets:3,reps:'5+5',fixed:{n:'KB complex (swing+clean+press)',b:'—',bl:'—',f:'KB complex',fl:'53 lb'}},
     {cat:'sled',sec:'Sled',sets:3,reps:'20 yd',lock:true,fixed:{n:'Sled pull rope/harness',b:'—',bl:'—',f:'3×20 yd moderate',fl:''}},
   ]},
   {label:'Lower B',slots:[
@@ -1313,7 +1313,7 @@ function saveState(){
 }
 function loadState(){
   try{
-    // Version flag — only reset program structure, preserve user data
+    // Version flag — only bump this when program STRUCTURE changes (not bug fixes)
     const appVersion = 'v4-4day';
     const storedVersion = localStorage.getItem('wt_version');
     if(storedVersion !== appVersion){
@@ -1321,8 +1321,8 @@ function loadState(){
       localStorage.removeItem('wt_program');
       localStorage.removeItem('wt_week');
       localStorage.setItem('wt_version', appVersion);
-      // Still load preserved data below
     }
+    // Always load whatever is stored — nothing else gets wiped
     const logs=localStorage.getItem('wt_logs');
     const eq=localStorage.getItem('wt_eq');
     const program=localStorage.getItem('wt_program');
@@ -1478,41 +1478,50 @@ const STRETCH_LIBRARY = {
 
 // BODYWEIGHT PROGRAM DATA
 const BW_PROGRAM = {
-  week: 1,
+  week: 2,
   dayIdx: 0,
   logs: [],
   days: [
     { label:'Push', focus:'Chest · Shoulders · Triceps',
       exercises:[
-        {n:'Push-up', sets:3, reps:'10–15', cue:'Hands shoulder-width. Full range. Squeeze chest at top.'},
-        {n:'Pike push-up', sets:3, reps:'8–10', cue:'Hips high, head between arms. Overhead pressing pattern.'},
-        {n:'Diamond push-up', sets:3, reps:'8–10', cue:'Hands close, elbows tight. Tricep focus.'},
-        {n:'Tricep dip (chair/bench)', sets:3, reps:'12–15', cue:'Hands on stable surface behind you. Hips close. Lower slow.'},
-        {n:'Decline push-up', sets:2, reps:'8–10', cue:'Feet elevated on chair or couch. Upper chest emphasis.'},
+        {n:'Push-up', sets:3, reps:'11–16', cue:'Hands shoulder-width. Full range. Squeeze chest at top.'},
+        {n:'Pike push-up', sets:3, reps:'9–11', cue:'Hips high, head between arms. Overhead pressing pattern.'},
+        {n:'Diamond push-up', sets:3, reps:'9–11', cue:'Hands close, elbows tight. Tricep focus.'},
+        {n:'Tricep dip (chair/bench)', sets:3, reps:'13–16', cue:'Hands on stable surface behind you. Hips close. Lower slow.'},
+        {n:'Decline push-up', sets:2, reps:'9–11', cue:'Feet elevated on chair or couch. Upper chest emphasis.'},
       ]},
     { label:'Pull', focus:'Back · Biceps · Rear Delt',
       exercises:[
-        {n:'Pull-up / chin-up', sets:3, reps:'5–10', cue:'Dead hang start. Full range. Chest toward bar.'},
-        {n:'Inverted row (table/bar)', sets:3, reps:'10–15', cue:'Body straight as a plank. Pull chest to surface. Retract scapulae first.'},
-        {n:'Towel bicep curl (door)', sets:3, reps:'12–15', cue:'Loop towel around door handle. Sit back into it. Curl slow and controlled.'},
-        {n:'Superman hold', sets:3, reps:'10 × 3s', cue:'Lying prone. Lift arms and legs simultaneously. Squeeze glutes. Hold 3s.'},
-        {n:'Prone Y-raise', sets:3, reps:'12', cue:'Lying face down. Arms in Y position. Lift and lower slow. Rear delt.'},
+        {n:'Pull-up / chin-up', sets:3, reps:'6–11', cue:'Dead hang start. Full range. Chest toward bar.'},
+        {n:'Inverted row (table/bar)', sets:3, reps:'11–16', cue:'Body straight as a plank. Pull chest to surface. Retract scapulae first.'},
+        {n:'Towel bicep curl (door)', sets:3, reps:'13–16', cue:'Loop towel around door handle. Sit back into it. Curl slow and controlled.'},
+        {n:'Superman hold', sets:3, reps:'11 × 3s', cue:'Lying prone. Lift arms and legs simultaneously. Squeeze glutes. Hold 3s.'},
+        {n:'Prone Y-raise', sets:3, reps:'13', cue:'Lying face down. Arms in Y position. Lift and lower slow. Rear delt.'},
       ]},
     { label:'Lower', focus:'Quads · Glutes · Hamstrings · Stability',
       exercises:[
-        {n:'TRX squat', sets:3, reps:'12–15', cue:'Hold straps, arms extended. Sit back into full depth squat. Straps help balance — use them to go deeper. Drive through heels to stand.'},
-        {n:'TRX single-leg squat', sets:3, reps:'6–8/leg', cue:'Hold straps for balance, one foot raised. Sit back and down on the standing leg. Control the descent. Great quad and glute isolation.'},
-        {n:'TRX hamstring curl', sets:3, reps:'10–12', cue:'Lie on floor, heels in foot cradles. Drive hips up, curl heels toward glutes. Hold at top. Lower slow. Brutal on the hamstrings.'},
-        {n:'TRX hip bridge', sets:3, reps:'15 × 2s hold', cue:'Heels in cradles, back on floor. Drive hips straight up. Squeeze glutes hard at top. Hold 2s. Lower controlled.'},
-        {n:'BW reverse lunge', sets:3, reps:'10/leg', cue:'Step back, lower rear knee toward floor. Front shin vertical. Drive back up through front heel. Upright torso.'},
-        {n:'Wall toe raise (tibialis)', sets:3, reps:'15', cue:'Heels on floor, back against wall. Lift toes as high as possible. Lower slow. Shin strength — key for pickleball lateral cuts.'},
+        {n:'TRX squat', sets:3, reps:'13–16', cue:'Hold straps, arms extended. Sit back into full depth squat. Straps help balance — use them to go deeper. Drive through heels to stand.'},
+        {n:'TRX single-leg squat', sets:3, reps:'7–9/leg', cue:'Hold straps for balance, one foot raised. Sit back and down on the standing leg. Control the descent. Great quad and glute isolation.'},
+        {n:'TRX hamstring curl', sets:3, reps:'11–13', cue:'Lie on floor, heels in foot cradles. Drive hips up, curl heels toward glutes. Hold at top. Lower slow. Brutal on the hamstrings.'},
+        {n:'TRX hip bridge', sets:3, reps:'16 × 2s hold', cue:'Heels in cradles, back on floor. Drive hips straight up. Squeeze glutes hard at top. Hold 2s. Lower controlled.'},
+        {n:'BW reverse lunge', sets:3, reps:'11/leg', cue:'Step back, lower rear knee toward floor. Front shin vertical. Drive back up through front heel. Upright torso.'},
+        {n:'Wall toe raise (tibialis)', sets:3, reps:'16', cue:'Heels on floor, back against wall. Lift toes as high as possible. Lower slow. Shin strength — key for pickleball lateral cuts.'},
+      ]},
+    { label:'TRX Upper', focus:'Chest · Back · Shoulders · Arms',
+      exercises:[
+        {n:'TRX chest press', sets:3, reps:'10–12', cue:'Face away from anchor, hands in handles at chest height. Lean forward, lower chest toward hands, press back up. More lean = harder. Keep body rigid.'},
+        {n:'TRX row', sets:3, reps:'12–15', cue:'Face anchor, lean back with arms extended. Pull chest to hands, elbows drive back. More lean back = harder. Squeeze shoulder blades at top.'},
+        {n:'TRX Y-fly', sets:3, reps:'10–12', cue:'Lean back, arms extended. Raise arms into Y above head. Targets rear delt and lower trap. Control the lower slow — that\'s the work.'},
+        {n:'TRX bicep curl', sets:3, reps:'12–15', cue:'Face anchor, lean back, palms up. Curl hands to forehead. Elbows stay high — don\'t let them drop. Lower all the way.'},
+        {n:'TRX tricep extension', sets:3, reps:'10–12', cue:'Face away from anchor, hands at forehead height. Lean in, lower forehead toward hands. Press back out. Elbows stay narrow. Hard.'},
+        {n:'TRX atomic push-up', sets:2, reps:'6–8', cue:'Feet in cradles, hands on floor in push-up position. Do a push-up, then tuck knees to chest at top. Core + chest + shoulder.'},
       ]},
   ]
 };
 
 let TV_ST = {
   coreDay: 0,
-  bwWeek: 1,
+  bwWeek: 2,
   bwDayIdx: 0,
   bwDays: JSON.parse(JSON.stringify(BW_PROGRAM.days)),
   bwLogs: [],
