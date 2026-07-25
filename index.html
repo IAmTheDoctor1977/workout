@@ -159,7 +159,7 @@ textarea { min-height: 80px; resize: vertical; }
     <div class="screen active" id="s-program">
       <div class="screen-header">
         <div><div class="screen-title">WEEK <span id="wk-num">17</span></div><div class="screen-sub">Bands + Free Weights + Sled</div></div>
-        <div class="screen-sub" id="phase-label" style="font-family:var(--font-mono);font-size:9px;color:var(--mid);">BUILD 2025-07-20f</div>
+        <div class="screen-sub" id="phase-label" style="font-family:var(--font-mono);font-size:9px;color:var(--mid);">BUILD 2025-07-25</div>
       </div>
       <div class="metric-grid">
         <div class="metric"><div class="metric-label">Current week</div><div class="metric-value" id="m-week">17</div></div>
@@ -1498,6 +1498,15 @@ const BW_PROGRAM = {
         {n:'Superman hold', sets:3, reps:'10 × 3s', cue:'Lying prone. Lift arms and legs simultaneously. Squeeze glutes. Hold 3s.'},
         {n:'Prone Y-raise', sets:3, reps:'12', cue:'Lying face down. Arms in Y position. Lift and lower slow. Rear delt.'},
       ]},
+    { label:'Lower', focus:'Quads · Glutes · Hamstrings · Stability',
+      exercises:[
+        {n:'TRX squat', sets:3, reps:'12–15', cue:'Hold straps, arms extended. Sit back into full depth squat. Straps help balance — use them to go deeper. Drive through heels to stand.'},
+        {n:'TRX single-leg squat', sets:3, reps:'6–8/leg', cue:'Hold straps for balance, one foot raised. Sit back and down on the standing leg. Control the descent. Great quad and glute isolation.'},
+        {n:'TRX hamstring curl', sets:3, reps:'10–12', cue:'Lie on floor, heels in foot cradles. Drive hips up, curl heels toward glutes. Hold at top. Lower slow. Brutal on the hamstrings.'},
+        {n:'TRX hip bridge', sets:3, reps:'15 × 2s hold', cue:'Heels in cradles, back on floor. Drive hips straight up. Squeeze glutes hard at top. Hold 2s. Lower controlled.'},
+        {n:'BW reverse lunge', sets:3, reps:'10/leg', cue:'Step back, lower rear knee toward floor. Front shin vertical. Drive back up through front heel. Upright torso.'},
+        {n:'Wall toe raise (tibialis)', sets:3, reps:'15', cue:'Heels on floor, back against wall. Lift toes as high as possible. Lower slow. Shin strength — key for pickleball lateral cuts.'},
+      ]},
   ]
 };
 
@@ -1645,13 +1654,13 @@ function generateBWWeek(){
       {n:'Prone T-raise',sets:3,reps:'12',cue:'Lying face down. Arms straight out to sides. Lift and lower.'},
       {n:'Commando pull-up',sets:3,reps:'5/side',cue:'Bar along the body, chin to one side, then other side alternating.'},
     ],
-    legs:[
+    lower:[
+      {n:'TRX pistol squat (assisted)',sets:3,reps:'5–6/leg',cue:'Hold straps, one leg extended. Sit as deep as possible on standing leg. Straps for balance only.'},
+      {n:'TRX lateral lunge',sets:3,reps:'8/leg',cue:'Hold straps, step wide to one side. Sit into that hip. Straight leg stays straight. Drive back up.'},
+      {n:'TRX glute bridge (single leg)',sets:3,reps:'10/leg',cue:'One heel in cradle, other leg raised. Drive hips up. Squeeze at top. Lower controlled.'},
       {n:'Jump squat',sets:3,reps:'10',cue:'Squat, explode up. Land soft with bent knees. Power.'},
-      {n:'Wall sit',sets:3,reps:'30–45s',cue:'90° knee angle. Back flat. Accumulate time.'},
-      {n:'Step-up (BW)',sets:3,reps:'10/leg',cue:'Box or stair. Full hip extension at top.'},
       {n:'Walking lunge',sets:3,reps:'10/leg',cue:'Continuous forward motion. Upright torso throughout.'},
-      {n:'Nordic curl (eccentric)',sets:3,reps:'5',cue:'Knees anchored under couch. Lower slowly. Hamstring.'},
-      {n:'Sumo squat hold',sets:3,reps:'30s',cue:'Wide stance, toes out. Sit into it. Inner thigh stretch + strength.'},
+      {n:'Nordic curl (eccentric)',sets:3,reps:'5',cue:'Knees anchored under couch. Lower slowly. Brutal hamstring.'},
     ],
     core:[
       {n:'Ab wheel rollout (or extended plank)',sets:3,reps:'8–10',cue:'Roll out slow, back flat. Pull back in. Anti-extension.'},
@@ -1662,7 +1671,7 @@ function generateBWWeek(){
     ],
   };
 
-  const dayCats = ['push','pull'];
+  const dayCats = ['push','pull','lower'];
   newDays.forEach((day,di)=>{
     const cat = dayCats[di];
     const pool = BW_ALT_POOL[cat]||[];
@@ -1707,39 +1716,48 @@ function buildSystemPrompt(){
   const weekNum = ST.week;
   const progSummary = prog.map(function(day,i){
     const moves = day.moves.map(function(m){
-      let s = '  - ' + m.n + ': ' + m.sets + 'x' + m.reps;
-      if(m.fl && m.fl!=='') s += ' @ ' + m.fl;
-      if(m.b && m.b!=='—') s += ' (band: ' + m.b + ')';
-      return s;
+      return '  [' + i + '.' + day.moves.indexOf(m) + '] ' + m.n + ': ' + m.sets + 'x' + m.reps +
+        (m.fl && m.fl!=='') ? ' @ ' + m.fl : '' +
+        (m.b && m.b!=='—') ? ' (band: ' + m.b + ')' : '';
     }).join('\n');
-    return 'Day ' + (i+1) + ' — ' + day.label + ':\n' + moves;
+    return 'Day ' + i + ' — ' + day.label + ':\n' + moves;
   }).join('\n\n');
-  const recentLogs = ST.logs.slice(0,5).map(function(l){
+
+  const bwSummary = TV_ST.bwDays.map(function(day,i){
+    return 'BW Day ' + i + ' — ' + day.label + ':\n' +
+      day.exercises.map(function(ex,j){ return '  [bw.' + i + '.' + j + '] ' + ex.n + ': ' + ex.sets + 'x' + ex.reps; }).join('\n');
+  }).join('\n\n');
+
+  const recentLogs = ST.logs.slice(0,3).map(function(l){
     return 'Week ' + l.week + ' ' + l.day + ': ' + l.result + (l.notes ? ' — ' + l.notes : '');
   }).join('\n');
 
-  return '# OUTPUT FORMAT — READ FIRST\n\n' +
-    'Whenever you modify, adjust, hold, or generate program changes, your response MUST end with this exact block:\n\n' +
+  return '# OUTPUT FORMAT — READ THIS FIRST\n\n' +
+    'When making ANY change to the program or TV tab, end your response with:\n\n' +
     '[[PROGRAM_UPDATE]]\n' +
-    '{"changes":[{"day":0,"moveName":"exact name from program","field":"fl","value":"75 lb"}]}\n' +
+    '{"ops":[{"op":"set","target":"prog","day":0,"move":0,"field":"fl","value":"75 lb"},{"op":"rename","target":"prog","day":0,"move":2,"value":"New Name"},{"op":"add","target":"prog","day":1,"exercise":{"n":"Name","b":"—","f":"Name","fl":"45 lb","sets":3,"reps":"10"}},{"op":"remove","target":"prog","day":1,"move":3},{"op":"set","target":"bw","day":0,"move":1,"field":"reps","value":"12–15"}]}\n' +
     '[[/PROGRAM_UPDATE]]\n\n' +
-    'No exceptions. No skipping. Even if you already described the change in text, still append the block.\n' +
-    'Values always include units: "75 lb" not "75". Day index: 0=Upper A, 1=Lower A, 2=Upper B, 3=Lower B.\n' +
-    'Fields: fl=free weight load, b=band load, reps=reps, sets=sets.\n\n' +
+    'Operation types:\n' +
+    '- "set": change a field value. Fields: n(name), fl(free weight), b(band), reps, sets, f(movement label), cue, sec\n' +
+    '- "rename": shorthand to change movement name (field "n")\n' +
+    '- "add": add a new exercise to a day\n' +
+    '- "remove": remove exercise at move index\n' +
+    'Targets: "prog" for main program, "bw" for TV bodyweight tab\n' +
+    'day and move are 0-indexed. Always include units in values: "75 lb" not "75".\n' +
+    'NEVER skip this block when making any change. NEVER.\n\n' +
     '---\n\n' +
-    '# CONTEXT\n\n' +
-    'You are the strength coach for Ife (Ifeoluwa Togun). Togun Gym app, Week ' + weekNum + '.\n\n' +
-    'CURRENT PROGRAM:\n' + progSummary + '\n\n' +
-    'RECENT LOGS:\n' + (recentLogs||'No logs yet.') + '\n\n' +
-    'RULES:\n' +
-    '- Structure: Upper A / Lower A / Upper B / Lower B\n' +
-    '- DB bench only — never barbell bench (trains alone, no spotter)\n' +
-    '- Hex bar for deadlift. DB Romanian deadlift is permanent.\n' +
-    '- Progression: tension OR reps, never both same week\n' +
-    '- RPE 8. Sets max 4. Deload every 4th week.\n' +
-    '- Core on upper days only. Sled blended across days.\n' +
-    'EQUIPMENT: Bands 10-300lb, DBs 15-100lb, KBs 10-70lb, barbell, hex bar, Mikolo cable pulley, sled, farmer bars, pull-up bar, dip station.\n' +
-    'Ife also plays pickleball 4 days/week — additional load, not recovery.\n\n' +
+    '# CURRENT PROGRAM (Week ' + weekNum + ')\n\n' +
+    progSummary + '\n\n' +
+    '# TV BODYWEIGHT\n\n' + bwSummary + '\n\n' +
+    '# RECENT LOGS\n' + (recentLogs||'None') + '\n\n' +
+    '# RULES\n' +
+    '- 4-day split: Upper A(0) / Lower A(1) / Upper B(2) / Lower B(3)\n' +
+    '- DB bench only — never barbell bench (no spotter)\n' +
+    '- Hex bar for deadlift. DB RDL permanent.\n' +
+    '- Progression: tension OR reps, never both. RPE 8. Sets max 4. Deload week 4.\n' +
+    '- Core on upper days only. Sled across all days.\n' +
+    'EQUIPMENT: Bands 10-300lb, DBs 15-100lb, KBs 10-70lb, barbell, hex bar, Mikolo cable pulley, sled, farmer bars, pull-up bar, dip station, TRX suspension trainer.\n' +
+    'Ife also plays pickleball 4 days/week — additional load.\n\n' +
     'Be direct and concise.';
 }
 
@@ -1802,8 +1820,8 @@ async function sendChat(){
   CHAT_HISTORY.push({role:'user', content:text});
   const thinking = addThinking();
 
-  // Build messages — append reminder to last user turn so model can't ignore it
-  const reminder = '\n\n[If this involves any program change, end your response with [[PROGRAM_UPDATE]]{"changes":[...]}[[/PROGRAM_UPDATE]]]';
+  // Build messages — append reminder to last user turn
+  const reminder = '\n\n[REMINDER: If this involves ANY change to the program or TV tab, end your response with the [[PROGRAM_UPDATE]]{"ops":[...]}[[/PROGRAM_UPDATE]] block as instructed.]';
   const apiMessages = CHAT_HISTORY.slice(0,-1).concat([{role:'user', content: text + reminder}]);
 
   try{
@@ -1828,57 +1846,74 @@ async function sendChat(){
     const reply = d.content.filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
     CHAT_HISTORY.push({role:'assistant', content:reply});
 
-    // Strip program block from display using regex (handles character variations)
-    const blockRegex = /\[\[PROGRAM_UPDATE\]\][\s\S]*?\[\[\/PROGRAM_UPDATE\]\]/;
-    const cleanReply = reply.replace(blockRegex, '').trim();
+    // Strip block and show clean reply
+    var cleanReply = reply.replace(/\[\[PROGRAM_UPDATE\]\][\s\S]*?\[\[\/PROGRAM_UPDATE\]\]/, '').trim();
     addBubble(cleanReply, 'ai');
 
-    // Parse update using regex
-    const blockMatch = reply.match(/\[\[PROGRAM_UPDATE\]\]([\s\S]*?)\[\[\/PROGRAM_UPDATE\]\]/);
-    let update = null;
+    // Parse ops block
+    var blockMatch = reply.match(/\[\[PROGRAM_UPDATE\]\]([\s\S]*?)\[\[\/PROGRAM_UPDATE\]\]/);
     if(blockMatch){
       try{
-        const jsonStr = blockMatch[1].trim();
-        const changes = JSON.parse(jsonStr).changes;
-        const prog = JSON.parse(JSON.stringify(ST.program || W17));
-        const applied = [];
-        changes.forEach(function(c){
-          if(c.value === 'HOLD') return;
-          const day = prog[c.day];
-          if(!day) return;
-          const needle = c.moveName.toLowerCase().trim();
-          const move = day.moves.find(function(m){
-            const mn = m.n.toLowerCase();
-            return mn === needle || mn.includes(needle) || needle.includes(mn);
-          });
-          if(!move) return;
-          let val = String(c.value).trim();
-          if(/^\d+(\.\d+)?$/.test(val)) val = val + ' lb';
-          move[c.field] = val;
-          applied.push(move.n + ' → ' + val);
+        var parsed = JSON.parse(blockMatch[1].trim());
+        var ops = parsed.ops || parsed.changes; // support both formats
+        var newProg = JSON.parse(JSON.stringify(ST.program || W17));
+        var newBW = JSON.parse(JSON.stringify(TV_ST.bwDays));
+        var applied = [];
+
+        ops.forEach(function(op){
+          var target = op.target || 'prog';
+          var days = target === 'bw' ? newBW : newProg;
+          var dayData = days[op.day];
+          if(!dayData) return;
+          var moves = target === 'bw' ? dayData.exercises : dayData.moves;
+          if(!moves) return;
+
+          if(op.op === 'set' || op.op === 'rename'){
+            var field = op.op === 'rename' ? 'n' : op.field;
+            var move = moves[op.move];
+            // fallback: fuzzy name match if index wrong
+            if(!move && op.moveName){
+              var needle = op.moveName.toLowerCase();
+              move = moves.find(function(m){ return m.n && m.n.toLowerCase().indexOf(needle) !== -1; });
+            }
+            if(!move) return;
+            var val = String(op.value).trim();
+            if(field !== 'n' && field !== 'reps' && field !== 'sec' && field !== 'cue' && /^\d+(\.\d+)?$/.test(val)) val = val + ' lb';
+            move[field] = val;
+            applied.push((op.op==='rename'?'Renamed: ':'') + (move.n||'?') + ' ' + field + ' \u2192 ' + val);
+
+          } else if(op.op === 'add'){
+            moves.push(op.exercise);
+            applied.push('Added: ' + (op.exercise.n||'new move'));
+
+          } else if(op.op === 'remove'){
+            var removed = moves.splice(op.move, 1);
+            applied.push('Removed: ' + (removed[0] && removed[0].n ? removed[0].n : 'move ' + op.move));
+          }
+
+          // old "changes" format fallback
+          if(op.moveName && !op.op){
+            var n2 = op.moveName.toLowerCase();
+            var m2 = moves.find(function(m){ return m.n && (m.n.toLowerCase()===n2 || m.n.toLowerCase().indexOf(n2)!==-1); });
+            if(!m2) return;
+            var v2 = String(op.value).trim();
+            if(op.field!=='n'&&op.field!=='reps'&&/^\d+(\.\d+)?$/.test(v2)) v2=v2+' lb';
+            m2[op.field]=v2;
+            applied.push(m2.n+' \u2192 '+v2);
+          }
         });
-        if(applied.length) update = { prog, applied };
-      }catch(e){ /* parse failed */ }
-    }
 
-    // DEBUG box
-    const dbg = document.createElement('div');
-    dbg.style.cssText = 'margin:4px 0;padding:8px;background:' + (blockMatch?'#1a2e1a':'#2e1a1a') + ';color:' + (blockMatch?'#00ff88':'#ff6666') + ';font-family:monospace;font-size:10px;border-radius:6px;white-space:pre-wrap;';
-    dbg.textContent = blockMatch
-      ? 'DEBUG OK — block found, parsed ' + (update ? update.applied.length + ' change(s): ' + update.applied.join(', ') : 'but no changes applied (name mismatch?)')
-      : 'DEBUG — no block found. Reply length: ' + reply.length + '. Last 100: ' + reply.slice(-100);
-    safeAppendChat(dbg);
-
-    if(update){
-      pendingCoachUpdate = update;
-      const applyEl = document.createElement('div');
-      applyEl.style.cssText = 'margin:6px 0;padding:10px 12px;background:var(--surface);border:1px solid var(--accent);border-radius:10px;font-size:12px;';
-      applyEl.innerHTML = '<div style="color:var(--accent);font-weight:500;margin-bottom:6px;">Program changes ready:</div>' +
-        '<div style="color:var(--mid);font-family:var(--font-mono);font-size:11px;margin-bottom:8px;">' +
-        update.applied.map(function(a){ return '• ' + a; }).join('<br>') + '</div>' +
-        '<button onclick="applyCoachUpdate(this)" style="width:100%;padding:8px;background:var(--accent);color:white;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-weight:500;">Apply to Program tab ↗</button>';
-      safeAppendChat(applyEl);
-      applyEl.scrollIntoView({behavior:'smooth', block:'end'});
+        if(applied.length){
+          pendingCoachUpdate = { prog: newProg, bw: newBW, applied: applied };
+          var applyEl = document.createElement('div');
+          applyEl.style.cssText = 'margin:6px 0;padding:10px 12px;background:var(--surface);border:1px solid var(--accent);border-radius:10px;font-size:12px;';
+          applyEl.innerHTML = '<div style="color:var(--accent);font-weight:500;margin-bottom:6px;">Changes ready to apply:</div>' +
+            '<div style="color:var(--mid);font-family:var(--font-mono);font-size:11px;margin-bottom:8px;">' +
+            applied.map(function(a){ return '\u2022 ' + a; }).join('<br>') + '</div>' +
+            '<button onclick="applyCoachUpdate(this)" style="width:100%;padding:8px;background:var(--accent);color:white;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-weight:500;">Apply changes \u2197</button>';
+          safeAppendChat(applyEl);
+        }
+      }catch(ex){ /* parse failed silently */ }
     }
 
     if(CHAT_HISTORY.length > 20) CHAT_HISTORY = CHAT_HISTORY.slice(-20);
@@ -1896,11 +1931,9 @@ function safeAppendChat(el){
 
 function applyCoachUpdate(btn){
   if(!pendingCoachUpdate) return;
-  ST.program = pendingCoachUpdate.prog;
-  saveState();
-  renderProgDay(ST.progDay);
-  if(typeof updateDeloadIndicator === 'function') updateDeloadIndicator();
-  btn.textContent = 'Applied ✓';
+  if(pendingCoachUpdate.prog){ ST.program = pendingCoachUpdate.prog; saveState(); renderProgDay(ST.progDay); if(typeof updateDeloadIndicator==='function') updateDeloadIndicator(); }
+  if(pendingCoachUpdate.bw){ TV_ST.bwDays = pendingCoachUpdate.bw; saveTVState(); if(typeof renderBWDay==='function') renderBWDay(); }
+  btn.textContent = 'Applied \u2713';
   btn.style.background = '#3a7d3a';
   btn.disabled = true;
   pendingCoachUpdate = null;
