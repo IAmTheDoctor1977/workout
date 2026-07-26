@@ -783,6 +783,96 @@ function buildRandDay(tmpl){
   });
 }
 
+var RECOVERY_PLAN = {
+  schedule: [
+    {
+      day: 'Monday',
+      load: 'Lower A',
+      tv: 'Core Day 1 (anti-extension)',
+      recovery: [
+        {label:'Post-session nutrition', text:'30–40g protein + fast carbs within 30 min. Posterior chain took a serious hit — DL, RDL, good mornings, swings. Anabolic window matters more after heavy hinge work than almost any other session.'},
+        {label:'Evening stretch', text:'Lower body protocol — couch stretch, hamstring with strap, 90/90 hip switch. Minimum 12 minutes. Monday night is your highest soft tissue priority of the week.'},
+        {label:'Soft tissue', text:'Foam roll glutes, hamstrings, calves before bed. Lacrosse ball into glute/piriformis if tight. You lift again Wednesday and pickleball Tuesday.'},
+      ]
+    },
+    {
+      day: 'Tuesday',
+      load: 'Upper A + Pickleball (2 hrs)',
+      tv: 'Core Day 2 (rotation) + Upper stretch post-pickleball',
+      recovery: [
+        {label:'Between lift and pickleball', text:'90 min gap minimum. Eat real food — carbs matter for the pickleball session. Upper body is already fatigued from pressing; pickleball loads shoulder girdle, forearm, and rotator cuff on top.'},
+        {label:'Pre-pickleball activation', text:'5 min — arm circles, band pull-aparts, wrist rotations. Rotator cuff is working through a fatigued shoulder after pressing. Warm it up deliberately.'},
+        {label:'Post-pickleball (peak fatigue point)', text:'Ice dominant shoulder/forearm if any soreness — 10–15 min. Upper stretch immediately: doorway pec, cross-body shoulder, sleeper stretch, wrist flexor and extensor. 20–30g protein before bed.'},
+      ]
+    },
+    {
+      day: 'Wednesday',
+      load: 'Lower B',
+      tv: 'Core Day 3 (lower abs)',
+      recovery: [
+        {label:'Pre-session check-in', text:'Legs had one day off from Monday. If glutes and hamstrings are still notably sore, reduce squat depth slightly and don\'t chase load. Form before weight on days with lingering soreness.'},
+        {label:'Post-session stretch', text:'Lower protocol — pay specific attention to quads and hip flexors tonight. Lower B is more quad-dominant. Couch stretch is mandatory.'},
+        {label:'Tibialis note', text:'Wednesday post-session is when shins are most loaded across the week (Monday hinge, Wednesday quad, Tuesday pickleball). Cold water on shins if any tightness develops.'},
+      ]
+    },
+    {
+      day: 'Thursday',
+      load: 'Upper B + Pickleball (2 hrs)',
+      tv: 'Core Day 4 (mixed) + Upper stretch post-pickleball',
+      recovery: [
+        {label:'Same double-day protocol as Tuesday', text:'Pull day is slightly easier on the shoulder than push day — Thursday pickleball hits a less pre-fatigued shoulder.'},
+        {label:'Grip fatigue — highest risk day', text:'Curls, rows, cable work, then 2 hrs of paddle grip. Forearm flexors and lateral epicondyle tendons are at peak weekly load. Forearm flexor and extensor stretch every Thursday without exception.'},
+        {label:'Lateral elbow watch', text:'If you ever feel lateral elbow tightness (tennis elbow precursor), address it immediately. This is your highest injury risk given your schedule.'},
+      ]
+    },
+    {
+      day: 'Friday',
+      load: 'Full Rest',
+      tv: 'BW Push or TRX Upper (Week A) / BW Lower (Week B)',
+      recovery: [
+        {label:'Active recovery — not sedentary', text:'20–30 min walk. Keeps blood flow moving through fatigued tissue without adding stress.'},
+        {label:'Full body stretch', text:'Full body stretch protocol from TV tab — all stretches, unhurried. Friday soft tissue work determines Saturday pickleball quality and Monday readiness.'},
+        {label:'Foam roll everything', text:'Mon–Thu accumulated a full week of load. Friday is your primary soft tissue window. If you have contrast shower access (hot/cold alternating), Friday is the day.'},
+      ]
+    },
+    {
+      day: 'Saturday',
+      load: 'Pickleball (2 hrs)',
+      tv: 'Lower body stretch post-session',
+      recovery: [
+        {label:'Pre-session leg activation', text:'Legs lifted Monday and Wednesday — Saturday is day 3 on legs that have had Thursday/Friday to recover. 5 min — leg swings, lateral band walks, calf raises, BW squats. Get glutes and hips firing before 2 hrs of lateral cuts.'},
+        {label:'Post-session stretch', text:'Lower body protocol — couch stretch, figure-4, hamstring, adductor butterfly, calf and soleus. Last loading day before two rest days. Give it 15 minutes minimum.'},
+      ]
+    },
+    {
+      day: 'Sunday',
+      load: 'Full Rest',
+      tv: 'BW Pull (Week A) / BW TRX Upper (Week B)',
+      recovery: [
+        {label:'True recovery day', text:'Optional gentle walk only. No elevated heart rate.'},
+        {label:'Spine and neck mobility', text:'Cat-cow, supine spinal twist, neck rotations slow and small-range (cervical history). TV tab spine/neck block. This is the right day for it.'},
+      ]
+    },
+  ],
+  bwRotation: [
+    {week:'Week A', friday:'BW Push', sunday:'BW Pull'},
+    {week:'Week B', friday:'BW Lower (TRX)', sunday:'BW TRX Upper'},
+  ],
+  riskHierarchy: [
+    {rank:1, area:'Lateral elbow / forearm', note:'Grip-heavy lifting 4 days + paddle grip 3 days. Watch for lateral elbow tightness — address immediately, not later.'},
+    {rank:2, area:'Rotator cuff', note:'Tuesday: upper pressing into pickleball overhead. Sleeper stretch and face pulls are your prophylaxis.'},
+    {rank:3, area:'Achilles / calf', note:'3 days of pickleball lateral cuts + calf work in tri-set. Calf and soleus stretch after every pickleball session.'},
+    {rank:4, area:'Cervical spine', note:'Known history. Pickleball involves overhead ball tracking. Keep neck work slow and small-range as programmed.'},
+  ],
+  nonNegotiables: [
+    'Mon + Wed post-session: protein + carbs within 30 min.',
+    'Tue + Thu: forearm stretch after pickleball. Every week.',
+    'Friday: full-body stretch + foam roll as a dedicated session.',
+    'Pre-pickleball warm-up all 3 days — especially Saturday.',
+    'Deload week: pull back on pickleball intensity too, not just lifting.',
+  ]
+};
+
 let ST = {
   week:2, progDay:0, randDay:0,
   program: JSON.parse(JSON.stringify(W17)),
@@ -2371,95 +2461,7 @@ loadChicasState();
 // RECOVERY PLAN
 // ============================================================
 
-var RECOVERY_PLAN = {
-  schedule: [
-    {
-      day: 'Monday',
-      load: 'Lower A',
-      tv: 'Core Day 1 (anti-extension)',
-      recovery: [
-        {label:'Post-session nutrition', text:'30–40g protein + fast carbs within 30 min. Posterior chain took a serious hit — DL, RDL, good mornings, swings. Anabolic window matters more after heavy hinge work than almost any other session.'},
-        {label:'Evening stretch', text:'Lower body protocol — couch stretch, hamstring with strap, 90/90 hip switch. Minimum 12 minutes. Monday night is your highest soft tissue priority of the week.'},
-        {label:'Soft tissue', text:'Foam roll glutes, hamstrings, calves before bed. Lacrosse ball into glute/piriformis if tight. You lift again Wednesday and pickleball Tuesday.'},
-      ]
-    },
-    {
-      day: 'Tuesday',
-      load: 'Upper A + Pickleball (2 hrs)',
-      tv: 'Core Day 2 (rotation) + Upper stretch post-pickleball',
-      recovery: [
-        {label:'Between lift and pickleball', text:'90 min gap minimum. Eat real food — carbs matter for the pickleball session. Upper body is already fatigued from pressing; pickleball loads shoulder girdle, forearm, and rotator cuff on top.'},
-        {label:'Pre-pickleball activation', text:'5 min — arm circles, band pull-aparts, wrist rotations. Rotator cuff is working through a fatigued shoulder after pressing. Warm it up deliberately.'},
-        {label:'Post-pickleball (peak fatigue point)', text:'Ice dominant shoulder/forearm if any soreness — 10–15 min. Upper stretch immediately: doorway pec, cross-body shoulder, sleeper stretch, wrist flexor and extensor. 20–30g protein before bed.'},
-      ]
-    },
-    {
-      day: 'Wednesday',
-      load: 'Lower B',
-      tv: 'Core Day 3 (lower abs)',
-      recovery: [
-        {label:'Pre-session check-in', text:'Legs had one day off from Monday. If glutes and hamstrings are still notably sore, reduce squat depth slightly and don\'t chase load. Form before weight on days with lingering soreness.'},
-        {label:'Post-session stretch', text:'Lower protocol — pay specific attention to quads and hip flexors tonight. Lower B is more quad-dominant. Couch stretch is mandatory.'},
-        {label:'Tibialis note', text:'Wednesday post-session is when shins are most loaded across the week (Monday hinge, Wednesday quad, Tuesday pickleball). Cold water on shins if any tightness develops.'},
-      ]
-    },
-    {
-      day: 'Thursday',
-      load: 'Upper B + Pickleball (2 hrs)',
-      tv: 'Core Day 4 (mixed) + Upper stretch post-pickleball',
-      recovery: [
-        {label:'Same double-day protocol as Tuesday', text:'Pull day is slightly easier on the shoulder than push day — Thursday pickleball hits a less pre-fatigued shoulder.'},
-        {label:'Grip fatigue — highest risk day', text:'Curls, rows, cable work, then 2 hrs of paddle grip. Forearm flexors and lateral epicondyle tendons are at peak weekly load. Forearm flexor and extensor stretch every Thursday without exception.'},
-        {label:'Lateral elbow watch', text:'If you ever feel lateral elbow tightness (tennis elbow precursor), address it immediately. This is your highest injury risk given your schedule.'},
-      ]
-    },
-    {
-      day: 'Friday',
-      load: 'Full Rest',
-      tv: 'BW Push or TRX Upper (Week A) / BW Lower (Week B)',
-      recovery: [
-        {label:'Active recovery — not sedentary', text:'20–30 min walk. Keeps blood flow moving through fatigued tissue without adding stress.'},
-        {label:'Full body stretch', text:'Full body stretch protocol from TV tab — all stretches, unhurried. Friday soft tissue work determines Saturday pickleball quality and Monday readiness.'},
-        {label:'Foam roll everything', text:'Mon–Thu accumulated a full week of load. Friday is your primary soft tissue window. If you have contrast shower access (hot/cold alternating), Friday is the day.'},
-      ]
-    },
-    {
-      day: 'Saturday',
-      load: 'Pickleball (2 hrs)',
-      tv: 'Lower body stretch post-session',
-      recovery: [
-        {label:'Pre-session leg activation', text:'Legs lifted Monday and Wednesday — Saturday is day 3 on legs that have had Thursday/Friday to recover. 5 min — leg swings, lateral band walks, calf raises, BW squats. Get glutes and hips firing before 2 hrs of lateral cuts.'},
-        {label:'Post-session stretch', text:'Lower body protocol — couch stretch, figure-4, hamstring, adductor butterfly, calf and soleus. Last loading day before two rest days. Give it 15 minutes minimum.'},
-      ]
-    },
-    {
-      day: 'Sunday',
-      load: 'Full Rest',
-      tv: 'BW Pull (Week A) / BW TRX Upper (Week B)',
-      recovery: [
-        {label:'True recovery day', text:'Optional gentle walk only. No elevated heart rate.'},
-        {label:'Spine and neck mobility', text:'Cat-cow, supine spinal twist, neck rotations slow and small-range (cervical history). TV tab spine/neck block. This is the right day for it.'},
-      ]
-    },
-  ],
-  bwRotation: [
-    {week:'Week A', friday:'BW Push', sunday:'BW Pull'},
-    {week:'Week B', friday:'BW Lower (TRX)', sunday:'BW TRX Upper'},
-  ],
-  riskHierarchy: [
-    {rank:1, area:'Lateral elbow / forearm', note:'Grip-heavy lifting 4 days + paddle grip 3 days. Watch for lateral elbow tightness — address immediately, not later.'},
-    {rank:2, area:'Rotator cuff', note:'Tuesday: upper pressing into pickleball overhead. Sleeper stretch and face pulls are your prophylaxis.'},
-    {rank:3, area:'Achilles / calf', note:'3 days of pickleball lateral cuts + calf work in tri-set. Calf and soleus stretch after every pickleball session.'},
-    {rank:4, area:'Cervical spine', note:'Known history. Pickleball involves overhead ball tracking. Keep neck work slow and small-range as programmed.'},
-  ],
-  nonNegotiables: [
-    'Mon + Wed post-session: protein + carbs within 30 min.',
-    'Tue + Thu: forearm stretch after pickleball. Every week.',
-    'Friday: full-body stretch + foam roll as a dedicated session.',
-    'Pre-pickleball warm-up all 3 days — especially Saturday.',
-    'Deload week: pull back on pickleball intensity too, not just lifting.',
-  ]
-};
+
 
 function loadRecoveryState(){
   try{
