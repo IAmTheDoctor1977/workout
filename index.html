@@ -365,6 +365,14 @@ textarea { min-height: 80px; resize: vertical; }
       <div id="chicas-content" style="padding-bottom:1rem;"></div>
     </div>
 
+    <!-- RECOVERY -->
+    <div class="screen" id="s-recovery">
+      <div class="screen-header">
+        <div><div class="screen-title">RECOVERY <span>PLAN</span></div><div class="screen-sub">Weekly protocol · Coach-adjustable</div></div>
+      </div>
+      <div id="recovery-content" style="padding-bottom:1rem;"></div>
+    </div>
+
     <!-- EQUIPMENT -->
     <div class="screen" id="s-equipment">
       <div class="screen-header"><div class="screen-title">EQUIP<span>MENT</span></div></div>
@@ -422,6 +430,10 @@ textarea { min-height: 80px; resize: vertical; }
     <button class="nav-btn" onclick="showScreen('chicas',this)">
       <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       Chicas
+    </button>
+    <button class="nav-btn" onclick="showScreen('recovery',this)">
+      <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      Recover
     </button>
   </nav>
 </div>
@@ -790,6 +802,7 @@ function showScreen(id,btn){
   if(id==='random')renderRandDay();
   if(id==='chat')initChat();
   if(id==='chicas')initChicas();
+  if(id==='recovery')renderRecovery();
 }
 
 // PROGRAM
@@ -1750,7 +1763,7 @@ function buildSystemPrompt(){
     '{"ops":[{"op":"set","target":"prog","day":2,"move":7,"field":"reps","value":"8+8"},{"op":"rename","target":"prog","day":2,"move":7,"value":"KB clean and press"}]}\n' +
     '[[/PROGRAM_UPDATE]]\n\n' +
     'op types: "set" (change a field), "rename" (change movement name), "add" (add exercise), "remove" (remove exercise)\n' +
-    'target: "prog" for main program, "bw" for TV bodyweight tab\n' +
+    'target: "prog" for main program, "bw" for TV bodyweight tab, "recovery" for recovery plan\n' +
     'day and move are the EXACT indices shown in brackets [day,move] in the program below.\n' +
     'field options: fl (free weight load), b (band load), reps, sets, n (name), f (label), cue, sec\n' +
     'Always include units in values: "75 lb" not "75". NEVER skip this block for any change.\n\n' +
@@ -1861,10 +1874,28 @@ async function sendChat(){
         var ops = parsed.ops || parsed.changes; // support both formats
         var newProg = JSON.parse(JSON.stringify(ST.program || W17));
         var newBW = JSON.parse(JSON.stringify(TV_ST.bwDays));
+        var newRecovery = JSON.parse(JSON.stringify(RECOVERY_PLAN));
         var applied = [];
 
         ops.forEach(function(op){
           var target = op.target || 'prog';
+
+          // Handle recovery plan updates
+          if(target === 'recovery'){
+            if(op.op === 'set' && op.section !== undefined && op.item !== undefined){
+              var section = newRecovery[op.section];
+              if(Array.isArray(section) && section[op.item] !== undefined){
+                section[op.item][op.field] = op.value;
+                applied.push('Recovery ' + op.section + '[' + op.item + '] updated');
+              }
+            } else if(op.op === 'set' && op.field && op.value){
+              // Set a top-level field
+              newRecovery[op.field] = op.value;
+              applied.push('Recovery ' + op.field + ' updated');
+            }
+            return;
+          }
+
           var days = target === 'bw' ? newBW : newProg;
           var dayData = days[op.day];
           if(!dayData) return;
@@ -1907,7 +1938,7 @@ async function sendChat(){
         });
 
         if(applied.length){
-          pendingCoachUpdate = { prog: newProg, bw: newBW, applied: applied };
+          pendingCoachUpdate = { prog: newProg, bw: newBW, recovery: newRecovery, applied: applied };
           var applyEl = document.createElement('div');
           applyEl.style.cssText = 'margin:6px 0;padding:10px 12px;background:var(--surface);border:1px solid var(--accent);border-radius:10px;font-size:12px;';
           applyEl.innerHTML = '<div style="color:var(--accent);font-weight:500;margin-bottom:6px;">Changes ready to apply:</div>' +
@@ -1934,26 +1965,36 @@ function safeAppendChat(el){
 
 function applyCoachUpdate(btn){
   if(!pendingCoachUpdate) return;
+  var navigateTo = 'program';
   if(pendingCoachUpdate.prog){
     ST.program = pendingCoachUpdate.prog;
     saveState();
-    // Force re-render all program days
     if(typeof renderProgChips === 'function') renderProgChips();
     renderProgDay(ST.progDay);
     if(typeof updateDeloadIndicator === 'function') updateDeloadIndicator();
+    navigateTo = 'program';
   }
   if(pendingCoachUpdate.bw){
     TV_ST.bwDays = pendingCoachUpdate.bw;
     saveTVState();
     if(typeof renderBWDay === 'function') renderBWDay();
+    navigateTo = 'tv';
   }
-  btn.textContent = 'Applied \u2713 — check Program tab';
+  if(pendingCoachUpdate.recovery){
+    RECOVERY_PLAN = pendingCoachUpdate.recovery;
+    saveRecoveryState();
+    renderRecovery();
+    navigateTo = 'recovery';
+  }
+  btn.textContent = 'Applied \u2713';
   btn.style.background = '#3a7d3a';
   btn.disabled = true;
-  // Briefly switch to program tab so change is visible
+  var dest = navigateTo;
   setTimeout(function(){
-    var progBtn = document.querySelector('.nav-btn:first-child');
-    if(progBtn) progBtn.click();
+    var navBtns = document.querySelectorAll('.nav-btn');
+    navBtns.forEach(function(b){
+      if(b.getAttribute('onclick') && b.getAttribute('onclick').indexOf("'"+dest+"'") !== -1) b.click();
+    });
   }, 800);
   pendingCoachUpdate = null;
 }
@@ -2325,6 +2366,177 @@ function readChicasWorkout(){
 
 // Init
 loadChicasState();
+
+// ============================================================
+// RECOVERY PLAN
+// ============================================================
+
+var RECOVERY_PLAN = {
+  schedule: [
+    {
+      day: 'Monday',
+      load: 'Lower A',
+      tv: 'Core Day 1 (anti-extension)',
+      recovery: [
+        {label:'Post-session nutrition', text:'30–40g protein + fast carbs within 30 min. Posterior chain took a serious hit — DL, RDL, good mornings, swings. Anabolic window matters more after heavy hinge work than almost any other session.'},
+        {label:'Evening stretch', text:'Lower body protocol — couch stretch, hamstring with strap, 90/90 hip switch. Minimum 12 minutes. Monday night is your highest soft tissue priority of the week.'},
+        {label:'Soft tissue', text:'Foam roll glutes, hamstrings, calves before bed. Lacrosse ball into glute/piriformis if tight. You lift again Wednesday and pickleball Tuesday.'},
+      ]
+    },
+    {
+      day: 'Tuesday',
+      load: 'Upper A + Pickleball (2 hrs)',
+      tv: 'Core Day 2 (rotation) + Upper stretch post-pickleball',
+      recovery: [
+        {label:'Between lift and pickleball', text:'90 min gap minimum. Eat real food — carbs matter for the pickleball session. Upper body is already fatigued from pressing; pickleball loads shoulder girdle, forearm, and rotator cuff on top.'},
+        {label:'Pre-pickleball activation', text:'5 min — arm circles, band pull-aparts, wrist rotations. Rotator cuff is working through a fatigued shoulder after pressing. Warm it up deliberately.'},
+        {label:'Post-pickleball (peak fatigue point)', text:'Ice dominant shoulder/forearm if any soreness — 10–15 min. Upper stretch immediately: doorway pec, cross-body shoulder, sleeper stretch, wrist flexor and extensor. 20–30g protein before bed.'},
+      ]
+    },
+    {
+      day: 'Wednesday',
+      load: 'Lower B',
+      tv: 'Core Day 3 (lower abs)',
+      recovery: [
+        {label:'Pre-session check-in', text:'Legs had one day off from Monday. If glutes and hamstrings are still notably sore, reduce squat depth slightly and don\'t chase load. Form before weight on days with lingering soreness.'},
+        {label:'Post-session stretch', text:'Lower protocol — pay specific attention to quads and hip flexors tonight. Lower B is more quad-dominant. Couch stretch is mandatory.'},
+        {label:'Tibialis note', text:'Wednesday post-session is when shins are most loaded across the week (Monday hinge, Wednesday quad, Tuesday pickleball). Cold water on shins if any tightness develops.'},
+      ]
+    },
+    {
+      day: 'Thursday',
+      load: 'Upper B + Pickleball (2 hrs)',
+      tv: 'Core Day 4 (mixed) + Upper stretch post-pickleball',
+      recovery: [
+        {label:'Same double-day protocol as Tuesday', text:'Pull day is slightly easier on the shoulder than push day — Thursday pickleball hits a less pre-fatigued shoulder.'},
+        {label:'Grip fatigue — highest risk day', text:'Curls, rows, cable work, then 2 hrs of paddle grip. Forearm flexors and lateral epicondyle tendons are at peak weekly load. Forearm flexor and extensor stretch every Thursday without exception.'},
+        {label:'Lateral elbow watch', text:'If you ever feel lateral elbow tightness (tennis elbow precursor), address it immediately. This is your highest injury risk given your schedule.'},
+      ]
+    },
+    {
+      day: 'Friday',
+      load: 'Full Rest',
+      tv: 'BW Push or TRX Upper (Week A) / BW Lower (Week B)',
+      recovery: [
+        {label:'Active recovery — not sedentary', text:'20–30 min walk. Keeps blood flow moving through fatigued tissue without adding stress.'},
+        {label:'Full body stretch', text:'Full body stretch protocol from TV tab — all stretches, unhurried. Friday soft tissue work determines Saturday pickleball quality and Monday readiness.'},
+        {label:'Foam roll everything', text:'Mon–Thu accumulated a full week of load. Friday is your primary soft tissue window. If you have contrast shower access (hot/cold alternating), Friday is the day.'},
+      ]
+    },
+    {
+      day: 'Saturday',
+      load: 'Pickleball (2 hrs)',
+      tv: 'Lower body stretch post-session',
+      recovery: [
+        {label:'Pre-session leg activation', text:'Legs lifted Monday and Wednesday — Saturday is day 3 on legs that have had Thursday/Friday to recover. 5 min — leg swings, lateral band walks, calf raises, BW squats. Get glutes and hips firing before 2 hrs of lateral cuts.'},
+        {label:'Post-session stretch', text:'Lower body protocol — couch stretch, figure-4, hamstring, adductor butterfly, calf and soleus. Last loading day before two rest days. Give it 15 minutes minimum.'},
+      ]
+    },
+    {
+      day: 'Sunday',
+      load: 'Full Rest',
+      tv: 'BW Pull (Week A) / BW TRX Upper (Week B)',
+      recovery: [
+        {label:'True recovery day', text:'Optional gentle walk only. No elevated heart rate.'},
+        {label:'Spine and neck mobility', text:'Cat-cow, supine spinal twist, neck rotations slow and small-range (cervical history). TV tab spine/neck block. This is the right day for it.'},
+      ]
+    },
+  ],
+  bwRotation: [
+    {week:'Week A', friday:'BW Push', sunday:'BW Pull'},
+    {week:'Week B', friday:'BW Lower (TRX)', sunday:'BW TRX Upper'},
+  ],
+  riskHierarchy: [
+    {rank:1, area:'Lateral elbow / forearm', note:'Grip-heavy lifting 4 days + paddle grip 3 days. Watch for lateral elbow tightness — address immediately, not later.'},
+    {rank:2, area:'Rotator cuff', note:'Tuesday: upper pressing into pickleball overhead. Sleeper stretch and face pulls are your prophylaxis.'},
+    {rank:3, area:'Achilles / calf', note:'3 days of pickleball lateral cuts + calf work in tri-set. Calf and soleus stretch after every pickleball session.'},
+    {rank:4, area:'Cervical spine', note:'Known history. Pickleball involves overhead ball tracking. Keep neck work slow and small-range as programmed.'},
+  ],
+  nonNegotiables: [
+    'Mon + Wed post-session: protein + carbs within 30 min.',
+    'Tue + Thu: forearm stretch after pickleball. Every week.',
+    'Friday: full-body stretch + foam roll as a dedicated session.',
+    'Pre-pickleball warm-up all 3 days — especially Saturday.',
+    'Deload week: pull back on pickleball intensity too, not just lifting.',
+  ]
+};
+
+function loadRecoveryState(){
+  try{
+    var s = localStorage.getItem('wt_recovery');
+    if(s) RECOVERY_PLAN = JSON.parse(s);
+  }catch(e){}
+}
+
+function saveRecoveryState(){
+  try{ localStorage.setItem('wt_recovery', JSON.stringify(RECOVERY_PLAN)); }catch(e){}
+}
+
+function renderRecovery(){
+  var el = document.getElementById('recovery-content');
+  if(!el) return;
+  var html = '';
+
+  // Weekly schedule
+  html += '<div class="section-divider">Weekly Schedule</div>';
+  RECOVERY_PLAN.schedule.forEach(function(d){
+    var isRest = d.load.indexOf('Rest') !== -1;
+    var isDouble = d.load.indexOf('+') !== -1;
+    var borderColor = isDouble ? 'var(--accent)' : isRest ? 'var(--mid)' : 'var(--rule)';
+    html += '<div class="card" style="margin-bottom:8px;border-left:3px solid ' + borderColor + ';">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">';
+    html += '<div style="font-weight:600;font-size:14px;">' + d.day + '</div>';
+    html += '<div style="font-size:11px;color:var(--mid);font-family:var(--font-mono);">' + (isDouble ? '⚡ Double day' : isRest ? 'REST' : '') + '</div>';
+    html += '</div>';
+    html += '<div style="font-size:12px;color:var(--accent);margin-bottom:4px;">' + d.load + '</div>';
+    html += '<div style="font-size:11px;color:var(--mid);margin-bottom:8px;">TV: ' + d.tv + '</div>';
+    d.recovery.forEach(function(r){
+      html += '<div style="margin-bottom:6px;padding:6px 8px;background:var(--surface);border-radius:6px;">';
+      html += '<div style="font-size:11.5px;font-weight:500;margin-bottom:2px;">' + r.label + '</div>';
+      html += '<div style="font-size:11px;color:var(--mid);line-height:1.5;">' + r.text + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+
+  // BW rotation
+  html += '<div class="section-divider">Bodyweight Rotation (2-week cycle)</div>';
+  html += '<div class="card">';
+  html += '<p style="font-size:11.5px;color:var(--mid);margin-bottom:8px;">Friday and Sunday are BW days — rotate between these two patterns to hit all 4 days over two weeks without overloading any single week.</p>';
+  html += '<table class="prog-table"><thead><tr><th>Cycle</th><th>Friday</th><th>Sunday</th></tr></thead><tbody>';
+  RECOVERY_PLAN.bwRotation.forEach(function(r){
+    html += '<tr><td><div class="ex-name">' + r.week + '</div></td><td>' + r.friday + '</td><td>' + r.sunday + '</td></tr>';
+  });
+  html += '</tbody></table></div>';
+
+  // Non-negotiables
+  html += '<div class="section-divider">Non-Negotiables</div>';
+  html += '<div class="card">';
+  RECOVERY_PLAN.nonNegotiables.forEach(function(n,i){
+    html += '<div style="display:flex;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--rule);">';
+    html += '<div style="color:var(--accent);font-weight:600;font-size:12px;flex-shrink:0;">' + (i+1) + '</div>';
+    html += '<div style="font-size:12px;line-height:1.5;">' + n + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Risk hierarchy
+  html += '<div class="section-divider">Injury Risk — Watch List</div>';
+  html += '<div class="card">';
+  RECOVERY_PLAN.riskHierarchy.forEach(function(r){
+    var colors = ['#c8401a','#d4641a','#b8860b','#6b6560'];
+    html += '<div style="display:flex;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--rule);align-items:flex-start;">';
+    html += '<div style="font-size:18px;font-weight:700;color:' + colors[r.rank-1] + ';flex-shrink:0;line-height:1;">' + r.rank + '</div>';
+    html += '<div><div style="font-size:12.5px;font-weight:500;">' + r.area + '</div>';
+    html += '<div style="font-size:11px;color:var(--mid);line-height:1.5;">' + r.note + '</div></div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+
+loadRecoveryState();
 </script>
 </body>
 </html>
