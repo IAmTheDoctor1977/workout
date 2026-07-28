@@ -446,7 +446,7 @@ const CHECKPOINTS = {
       warmup:'2 min cardio · Barbell hang clean + push press complex ramp-up @ 50% 2×3 · Arm circles · Band pull-apart 2×15 · Wall slide 2×10',
       moves:[
         {n:'Barbell hang clean + push press complex',b:'—',f:'Barbell complex',fl:'125 lb',sets:4,reps:'5',sec:'Power primer'},
-        {n:'Banded chest press',b:'220 lb',f:'DB bench press',fl:'80 lb each',sets:4,reps:'8'},
+        {n:'Chest press',b:'220 lb',f:'Barbell bench press',fl:'135 lb',sets:4,reps:'8',_odd:'Barbell bench press',_oddfl:'135 lb',_oddreps:'8',_even:'DB floor press',_evenfl:'70 lb each',_evenreps:'8',_track:'odd-load-even-reps'},
         {n:'Shoulder press',b:'115 lb',f:'DB shoulder press',fl:'55 lb each',sets:4,reps:'8'},
         {n:'Chest fly',b:'55 lb',f:'DB chest fly',fl:'25 lb each',sets:4,reps:'17'},
         {n:'Lateral raise',b:'25 lb',f:'DB lateral raise',fl:'20 lb each',sets:4,reps:'17'},
@@ -1173,12 +1173,52 @@ function generateLocalWeek(targetWeek, fromWeek, perf, notes, parsedSignals){
   const base = JSON.parse(JSON.stringify(ST.program || W17));
   const isEvenWeek = weekNum % 2 === 0;
 
+  // ODD/EVEN MOVEMENT SWAP — apply before progression
+  // Movements with _track:'odd-load-even-reps' swap between two variations
+  base.forEach(day => {
+    day.moves.forEach(m => {
+      if(m._track !== 'odd-load-even-reps') return;
+      if(isEvenWeek){
+        // Even week: DB floor press, rep progression only
+        m.f = m._even;
+        m.fl = m._evenfl;
+        m.reps = m._evenreps;
+        m.n = 'Chest press (DB floor)';
+        m._currentTrack = 'even';
+      } else {
+        // Odd week: barbell bench, load progression only
+        m.f = m._odd;
+        m.fl = m._oddfl;
+        m.reps = m._oddreps;
+        m.n = 'Chest press (barbell)';
+        m._currentTrack = 'odd';
+      }
+    });
+  });
+
   base.forEach(day => {
     day.moves.forEach(m => {
       if(isNonProgressing(m.n)) return;
 
       const isPrimary = isPrimaryMove(m.n);
       const action = decideAction(m.n, perf, notes, parsedSignals);
+
+      // For tracked movements — different progression rules per track
+      if(m._track === 'odd-load-even-reps'){
+        if(m._currentTrack === 'even'){
+          // Even (DB floor): reps only, never load
+          if(m.reps && m.reps !== 'see loads'){
+            m.reps = progressRepsField(m.reps, false, action);
+            // Store updated reps back to even track
+            m._evenreps = m.reps;
+          }
+        } else {
+          // Odd (barbell): load only, never reps
+          if(m.fl) m.fl = progressLoadField(m.fl, true, action);
+          m._oddfl = m.fl;
+        }
+        return;
+      }
 
       if(m.b) m.b = progressLoadField(m.b, isPrimary, action);
       if(m.fl) m.fl = progressLoadField(m.fl, isPrimary, action);
@@ -1862,7 +1902,11 @@ function buildSystemPrompt(){
     'PROGRAM:\n' + progSummary + '\n\n' +
     'TV BODYWEIGHT:\n' + bwSummary + '\n\n' +
     'RECENT LOGS:\n' + (recentLogs||'None') + '\n\n' +
-    'RULES: 4-day split Day0=Upper A, Day1=Lower A, Day2=Upper B, Day3=Lower B. DB bench only (no spotter). Hex bar DL. DB RDL permanent. RPE 8. Sets max 4. Deload week 4. Core on upper days only.\n' +
+    'RULES: 4-day split Day0=Upper A, Day1=Lower A, Day2=Upper B, Day3=Lower B. DB bench only (no spotter) EXCEPT barbell bench press is now allowed with spotter stands. Hex bar DL. DB RDL permanent. RPE 8. Sets max 4. Deload week 4. Core on upper days only.\n' +
+    'CHEST PRESS — TWO-TRACK SYSTEM:\n' +
+    '- ODD weeks: Barbell bench press @ current odd load. Progress LOAD only, never reps.\n' +
+    '- EVEN weeks: DB floor press @ current even load. Progress REPS only (target ceiling 4x15-16), never load.\n' +
+    '- These are separate progression tracks. Never cross-progress them.\n' +
     'EQUIPMENT: Bands, DBs 15-100lb, KBs 10-70lb, barbell, hex bar, Mikolo cable, sled, TRX. Pickleball 4x/week additional load.\n' +
     'Be direct and concise.';
 }
