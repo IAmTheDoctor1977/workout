@@ -1479,7 +1479,7 @@ function loadState(){
 }
 
 // INIT
-const BUILD_STAMP = '2025-07-31';
+const BUILD_STAMP = '2025-08-01';
 loadState();
 var stampEl = document.getElementById('phase-label');
 if(stampEl) stampEl.textContent = 'BUILD ' + BUILD_STAMP;
@@ -1893,24 +1893,25 @@ function buildSystemPrompt(){
   return '# OUTPUT FORMAT — READ FIRST\n\n' +
     'When making ANY change, end your response with:\n\n' +
     '[[PROGRAM_UPDATE]]\n' +
-    '{"ops":[{"op":"set","target":"prog","day":2,"move":7,"field":"reps","value":"8+8"},{"op":"rename","target":"prog","day":2,"move":7,"value":"KB clean and press"}]}\n' +
+    '{"ops":[{"op":"set","target":"prog","day":2,"move":7,"field":"reps","value":"8+8"},{"op":"set","target":"week","value":3}]}\n' +
     '[[/PROGRAM_UPDATE]]\n\n' +
     'op types: "set" (change a field), "rename" (change movement name), "add" (add exercise), "remove" (remove exercise)\n' +
-    'target: "prog" for main program, "bw" for TV bodyweight tab, "recovery" for recovery plan\n' +
+    'target: "prog" for main program, "bw" for TV bodyweight tab, "recovery" for recovery plan, "week" for the week counter\n' +
+    'WEEK COUNTER: To update the current week number use {"op":"set","target":"week","value":3} — value is just the number, no "lb". NEVER change a movement name when asked to update the week number. These are completely separate things.\n' +
     'day and move are the EXACT indices shown in brackets [day,move] in the program below.\n' +
     'field options: fl (free weight load), b (band load), reps, sets, n (name), f (label), cue, sec\n' +
-    'Always include units in values: "75 lb" not "75". NEVER skip this block for any change.\n\n' +
+    'Always include units in load values: "75 lb" not "75". NEVER skip this block for any change.\n\n' +
     '---\n\n' +
     'COACH FOR: Ife (Ifeoluwa Togun) — Week ' + weekNum + '\n\n' +
     'PROGRAM:\n' + progSummary + '\n\n' +
     'TV BODYWEIGHT:\n' + bwSummary + '\n\n' +
     'RECENT LOGS:\n' + (recentLogs||'None') + '\n\n' +
-    'RULES: 4-day split Day0=Upper A, Day1=Lower A, Day2=Upper B, Day3=Lower B. DB bench only (no spotter) EXCEPT barbell bench press is now allowed with spotter stands. Hex bar DL. DB RDL permanent. RPE 8. Sets max 4. Deload week 4. Core on upper days only.\n' +
+    'RULES: 4-day split Day0=Upper A, Day1=Lower A, Day2=Upper B, Day3=Lower B. Barbell bench now allowed (Mikolo K6 cage with safeties). Hex bar DL. DB RDL permanent. RPE 8. Sets max 4. Deload week 4. Core on upper days only.\n' +
     'CHEST PRESS — TWO-TRACK SYSTEM:\n' +
     '- ODD weeks: Barbell bench press @ current odd load. Progress LOAD only, never reps.\n' +
     '- EVEN weeks: DB floor press @ current even load. Progress REPS only (target ceiling 4x15-16), never load.\n' +
     '- These are separate progression tracks. Never cross-progress them.\n' +
-    'EQUIPMENT: Bands, DBs 15-100lb, KBs 10-70lb, barbell, hex bar, Mikolo cable, sled, TRX. Pickleball 4x/week additional load.\n' +
+    'EQUIPMENT: Bands, DBs 15-100lb, KBs 10-70lb, barbell, hex bar, Mikolo K6 cable crossover, sled, TRX. Pickleball 4x/week additional load.\n' +
     'Be direct and concise.';
 }
 
@@ -2012,10 +2013,21 @@ async function sendChat(){
         var newProg = JSON.parse(JSON.stringify(ST.program || W17));
         var newBW = JSON.parse(JSON.stringify(TV_ST.bwDays));
         var newRecovery = JSON.parse(JSON.stringify(RECOVERY_PLAN));
+        var newWeekNum = null;
         var applied = [];
 
         ops.forEach(function(op){
           var target = op.target || 'prog';
+
+          // Handle week counter update
+          if(target === 'week'){
+            var newWeek = parseInt(op.value);
+            if(!isNaN(newWeek) && newWeek > 0){
+              newWeekNum = newWeek;
+              applied.push('Week counter \u2192 ' + newWeek);
+            }
+            return;
+          }
 
           // Handle recovery plan updates
           if(target === 'recovery'){
@@ -2075,7 +2087,7 @@ async function sendChat(){
         });
 
         if(applied.length){
-          pendingCoachUpdate = { prog: newProg, bw: newBW, recovery: newRecovery, applied: applied };
+          pendingCoachUpdate = { prog: newProg, bw: newBW, recovery: newRecovery, week: newWeekNum, applied: applied };
           var applyEl = document.createElement('div');
           applyEl.style.cssText = 'margin:6px 0;padding:10px 12px;background:var(--surface);border:1px solid var(--accent);border-radius:10px;font-size:12px;';
           applyEl.innerHTML = '<div style="color:var(--accent);font-weight:500;margin-bottom:6px;">Changes ready to apply:</div>' +
@@ -2122,6 +2134,16 @@ function applyCoachUpdate(btn){
     saveRecoveryState();
     renderRecovery();
     navigateTo = 'recovery';
+  }
+  if(pendingCoachUpdate.week !== null && pendingCoachUpdate.week !== undefined){
+    ST.week = pendingCoachUpdate.week;
+    saveState();
+    document.getElementById('m-week').textContent = ST.week;
+    document.getElementById('wk-num').textContent = ST.week;
+    document.getElementById('log-week').value = ST.week;
+    document.getElementById('gen-week').value = ST.week + 1;
+    document.getElementById('gen-from').value = ST.week;
+    if(typeof updateDeloadIndicator === 'function') updateDeloadIndicator();
   }
   btn.textContent = 'Applied \u2713';
   btn.style.background = '#3a7d3a';
