@@ -448,8 +448,8 @@ const CHECKPOINTS = {
         {n:'Barbell hang clean + push press complex',b:'—',f:'Barbell complex',fl:'125 lb',sets:4,reps:'5',sec:'Power primer'},
         {n:'Chest press',b:'220 lb',f:'Barbell bench press',fl:'135 lb',sets:4,reps:'8',_odd:'Barbell bench press',_oddfl:'135 lb',_oddreps:'8',_even:'DB floor press',_evenfl:'70 lb each',_evenreps:'8',_track:'odd-load-even-reps'},
         {n:'Shoulder press',b:'115 lb',f:'DB shoulder press',fl:'55 lb each',sets:4,reps:'8'},
-        {n:'Chest fly',b:'55 lb',f:'DB chest fly',fl:'25 lb each',sets:4,reps:'17'},
-        {n:'Lateral raise',b:'25 lb',f:'DB lateral raise',fl:'20 lb each',sets:4,reps:'17'},
+        {n:'Cable crossover fly',b:'55 lb',f:'Cable crossover fly (high-to-low)',fl:'15 lb/side',sets:4,reps:'17'},
+        {n:'Cable lateral raise',b:'25 lb',f:'Cable lateral raise (low pulley)',fl:'10 lb/side',sets:4,reps:'17'},
         {n:'Cable pushdown (rope)',b:'105 lb',f:'Cable pushdown (rope)',fl:'45 lb',sets:3,reps:'13'},
         {n:'Cable overhead tricep ext',b:'100 lb',f:'Cable overhead tricep ext',fl:'45 lb',sets:3,reps:'13'},
         {n:'Cable woodchop',b:'70 lb',f:'Cable woodchop',fl:'35 lb',sets:3,reps:'11/side',sec:'Core'},
@@ -513,7 +513,7 @@ const DEFAULT_EQ = [
   {name:'Push/pull sled',type:'Sled'},{name:'Harness',type:'Sled'},
   {name:"Farmer's carry bars",type:'Other'},{name:'Weight vest',type:'Other'},
   {name:'Pull-up bar',type:'Other'},{name:'Dip station',type:'Other'},
-  {name:'Mikolo LAT/pulley system',type:'Cable'},{name:'Foam roller',type:'Other'},{name:'Lacrosse balls',type:'Other'},
+  {name:'Mikolo K6 Power Cage + Cable Crossover',type:'Cable'},{name:'Foam roller',type:'Other'},{name:'Lacrosse balls',type:'Other'},
 ];
 
 const POOL = {
@@ -545,7 +545,7 @@ const POOL = {
     {n:'Pike push-up',b:'Banded pike push-up',bl:'40 lb',f:'Pike push-up',fl:'BW'},
   ],
   chest_acc:[
-    {n:'DB chest fly',b:'Banded chest fly',bl:'50 lb',f:'DB chest fly',fl:'25 lb each'},
+    {n:'Cable crossover fly',b:'Banded chest fly',bl:'50 lb',f:'Cable crossover fly (high-to-low)',fl:'15 lb/side'},
     {n:'DB incline fly',b:'Banded incline fly',bl:'40 lb',f:'DB incline fly',fl:'20 lb each'},
     {n:'DB pullover',b:'Banded pullover',bl:'40 lb',f:'DB pullover',fl:'50 lb'},
     {n:'KB pullover',b:'Banded pullover',bl:'40 lb',f:'KB pullover',fl:'53 lb'},
@@ -555,7 +555,7 @@ const POOL = {
     {n:'Band high-to-low fly',b:'Band fly',bl:'30 lb',f:'Band high-to-low fly',fl:'30 lb'},
   ],
   shoulder_acc:[
-    {n:'DB lateral raise',b:'Banded lateral raise',bl:'20 lb',f:'DB lateral raise',fl:'15 lb each'},
+    {n:'Cable lateral raise',b:'Banded lateral raise',bl:'20 lb',f:'Cable lateral raise (low pulley)',fl:'10 lb/side'},
     {n:'KB lateral raise',b:'Banded lateral raise',bl:'20 lb',f:'KB lateral raise',fl:'10 lb each'},
     {n:'Cable lateral raise',b:'Banded lateral raise',bl:'20 lb',f:'Cable lateral raise',fl:'10 lb/side'},
     {n:'DB front raise',b:'Banded front raise',bl:'20 lb',f:'DB front raise',fl:'20 lb each'},
@@ -1479,7 +1479,7 @@ function loadState(){
 }
 
 // INIT
-const BUILD_STAMP = '2025-07-28';
+const BUILD_STAMP = '2025-07-31';
 loadState();
 var stampEl = document.getElementById('phase-label');
 if(stampEl) stampEl.textContent = 'BUILD ' + BUILD_STAMP;
