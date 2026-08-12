@@ -232,8 +232,8 @@ textarea { min-height: 80px; resize: vertical; }
       <div class="screen-header"><div class="screen-title">GENERATE <span>WEEK</span></div></div>
       <div class="card">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div class="form-group" style="margin:0"><label class="form-label">Generating week</label><input type="number" id="gen-week" value="3" min="1"></div>
-          <div class="form-group" style="margin:0"><label class="form-label">Based on week</label><input type="number" id="gen-from" value="2" min="1"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Generating week</label><input type="number" id="gen-week" value="6" min="1"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Based on week</label><input type="number" id="gen-from" value="5" min="1"></div>
         </div>
         <div class="form-group" style="margin-top:10px"><label class="form-label">Performance last week</label>
           <select id="gen-perf">
@@ -443,55 +443,56 @@ textarea { min-height: 80px; resize: vertical; }
 const CHECKPOINTS = {
   1: [
     { label:'Upper A — Push', type:'upper',
-      warmup:'2 min cardio · Barbell hang clean + push press complex ramp-up @ 50% 2×3 · Arm circles · Band pull-apart 2×15 · Wall slide 2×10',
+      warmup:'2 min cardio · Barbell complex ramp-up @ 50% 2×3 · Arm circles · Band pull-apart 2×15 · Wall slide 2×10',
       moves:[
-        {n:'Barbell hang clean + push press complex',b:'—',f:'Barbell complex',fl:'125 lb',sets:4,reps:'5',sec:'Power primer'},
-        {n:'Chest press',b:'220 lb',f:'Barbell bench press',fl:'135 lb',sets:4,reps:'8',_odd:'Barbell bench press',_oddfl:'135 lb',_oddreps:'8',_even:'DB floor press',_evenfl:'70 lb each',_evenreps:'8',_track:'odd-load-even-reps'},
-        {n:'Shoulder press',b:'115 lb',f:'DB shoulder press',fl:'55 lb each',sets:4,reps:'8'},
-        {n:'Cable crossover fly',b:'55 lb',f:'Cable crossover fly (high-to-low)',fl:'15 lb/side',sets:4,reps:'17'},
-        {n:'Cable lateral raise',b:'25 lb',f:'Cable lateral raise (low pulley)',fl:'10 lb/side',sets:4,reps:'17'},
-        {n:'Cable pushdown (rope)',b:'105 lb',f:'Cable pushdown (rope)',fl:'45 lb',sets:3,reps:'13'},
-        {n:'Cable overhead tricep ext',b:'100 lb',f:'Cable overhead tricep ext',fl:'45 lb',sets:3,reps:'13'},
-        {n:'Cable woodchop',b:'70 lb',f:'Cable woodchop',fl:'35 lb',sets:3,reps:'11/side',sec:'Core'},
+        {n:'Barbell hang clean + push press complex',b:'—',f:'Barbell complex',fl:'140 lb',sets:4,reps:'5',sec:'Power primer'},
+        {n:'Barbell bench press',b:'220 lb',f:'Barbell bench press',fl:'170 lb',sets:4,reps:'8',_odd:'Barbell bench press',_oddfl:'170 lb',_oddreps:'8',_even:'DB floor press',_evenfl:'70 lb each',_evenreps:'8',_track:'odd-load-even-reps'},
+        {n:'Shoulder press',b:'115 lb',f:'DB shoulder press',fl:'60 lb each',sets:4,reps:'8'},
+        {n:'Cable crossover fly',b:'55 lb',f:'Cable crossover fly (high-to-low)',fl:'15 lb/side',sets:4,reps:'19'},
+        {n:'Cable lateral raise',b:'25 lb',f:'Cable lateral raise (low pulley)',fl:'10 lb/side',sets:4,reps:'19'},
+        {n:'Cable pushdown (rope)',b:'105 lb',f:'Cable pushdown (rope)',fl:'67.5 lb',sets:3,reps:'15'},
+        {n:'Cable overhead tricep ext',b:'100 lb',f:'Cable overhead tricep ext',fl:'70 lb',sets:3,reps:'15'},
+        {n:'Cable woodchop',b:'70 lb',f:'Cable woodchop',fl:'50 lb',sets:3,reps:'12/side',sec:'Core'},
         {n:'Sled push',b:'—',f:'3 × 20 yd moderate',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
       ]},
     { label:'Lower A — Hinge', type:'lower',
-      warmup:'2 min cardio · Hip circles 30s each · 90/90 hip switch 10 each · World\'s greatest stretch 5 each · Leg swings · Glute bridge 2×15 · Banded good morning 2×10 · BW RDL 2×8 · Bar ramp-up → 90% ×1',
+      warmup:"2 min cardio · Hip circles 30s each · 90/90 hip switch 10 each · World's greatest stretch 5 each · Leg swings · Glute bridge 2×15 · Banded good morning 2×10 · BW RDL 2×8 · Bar ramp-up → 90% ×1",
       moves:[
         {n:'Sled harness sprint',b:'—',f:'4 × 15 yd light',fl:'',sets:4,reps:'15 yd',sec:'Sled primer'},
-        {n:'Hex bar deadlift',b:'305 lb',f:'Hex bar deadlift',fl:'265 lb',sets:4,reps:'10'},
+        {n:'Hex bar deadlift',b:'305 lb',f:'Hex bar deadlift',fl:'285 lb',sets:4,reps:'10'},
         {n:'DB Romanian deadlift',b:'195 lb',f:'DB Romanian deadlift',fl:'80 lb each',sets:4,reps:'10'},
         {n:'Barbell good morning',b:'—',f:'Barbell good morning',fl:'95 lb',sets:3,reps:'10'},
-        {n:'Cable leg curl',b:'70 lb',f:'Cable leg curl (ankle)',fl:'25 lb',sets:3,reps:'19'},
-        {n:'Hip thrusts / KB swing',b:'BW × 32',f:'KB swing',fl:'53 lb × 24',sets:4,reps:'see loads'},
-        {n:'⟳ TRI-SET: Goblet reverse lunge',b:'BW × 10/leg',f:'Goblet reverse lunge',fl:'35 lb × 10/leg',sets:4,reps:'10/leg',sec:'Tri-set'},
-        {n:'⟳ Tibialis raise',b:'—',f:'Tibialis raise',fl:'35 lb',sets:4,reps:'15'},
-        {n:'⟳ Calf raise',b:'BW',f:'Standing calf raise',fl:'+45 lb plate',sets:4,reps:'20'},
+        {n:'Cable leg curl',b:'70 lb',f:'Cable leg curl (ankle)',fl:'45 lb',sets:3,reps:'21'},
+        {n:'Hip thrusts / KB swing',b:'BW × 32',f:'KB swing',fl:'60 lb × 24',sets:4,reps:'see loads'},
+        {n:'⟳ TRI-SET: Goblet reverse lunge',b:'BW × 9/leg',f:'Goblet reverse lunge',fl:'40 lb × 9/leg',sets:3,reps:'9/leg',sec:'Tri-set'},
+        {n:'⟳ Tibialis raise',b:'—',f:'Tibialis raise',fl:'25 lb',sets:3,reps:'17'},
+        {n:'⟳ Calf raise',b:'BW',f:'Standing calf raise',fl:'+45 lb plate',sets:3,reps:'22'},
       ]},
     { label:'Upper B — Pull', type:'upper',
       warmup:'2 min cardio · Band pull-apart 2×15 · Face pull light band 2×15 · Scapular pull-up 2×8 · Prone Y-T-W 1×8 · Dead hang 2×20–30s',
       moves:[
-        {n:'Lat pulldown',b:'155 lb',f:'Cable lat pulldown (bar)',fl:'50 lb',sets:4,reps:'10'},
-        {n:'Banded row',b:'245 lb',f:'Cable seated row',fl:'45 lb',sets:4,reps:'10'},
-        {n:'Cable face pull',b:'55 lb',f:'Cable face pull (rope)',fl:'20 lb',sets:4,reps:'23'},
-        {n:'Rear delt fly',b:'20 lb',f:'DB rear delt fly',fl:'15 lb each',sets:3,reps:'21'},
-        {n:'Cable curl (bar)',b:'105 lb',f:'Cable curl (bar)',fl:'30 lb',sets:3,reps:'15'},
-        {n:'Cable single-arm curl',b:'95 lb',f:'Cable single-arm curl',fl:'15 lb',sets:4,reps:'20'},
+        {n:'Lat pulldown',b:'155 lb',f:'Cable lat pulldown (bar)',fl:'160 lb',sets:4,reps:'10'},
+        {n:'Banded row',b:'245 lb',f:'Cable seated row',fl:'160 lb',sets:4,reps:'10'},
+        {n:'Cable face pull',b:'55 lb',f:'Cable face pull (rope)',fl:'35 lb',sets:4,reps:'25'},
+        {n:'Rear delt fly',b:'20 lb',f:'DB rear delt fly',fl:'12.5 lb/side',sets:3,reps:'23'},
+        {n:'Cable curl (bar)',b:'105 lb',f:'Cable curl (bar)',fl:'85 lb',sets:3,reps:'11'},
+        {n:'Cable single-arm curl',b:'95 lb',f:'Cable single-arm curl',fl:'15 lb',sets:3,reps:'22'},
+        {n:'Cable straight-arm pulldown',b:'95 lb',f:'Cable straight-arm pulldown',fl:'25 lb',sets:4,reps:'21'},
         {n:'Dead bug',b:'BW',f:'Dead bug',fl:'BW',sets:3,reps:'10/side',sec:'Core'},
-        {n:'KB complex (swing+clean+press)',b:'—',f:'KB complex',fl:'53 lb',sets:3,reps:'5+5',sec:'Finisher'},
+        {n:'KB complex (swing+clean+press)',b:'—',f:'KB complex',fl:'60 lb',sets:3,reps:'5+5',sec:'Finisher'},
         {n:'Sled pull',b:'—',f:'3 × 20 yd rope/harness',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
       ]},
     { label:'Lower B — Quad', type:'lower',
-      warmup:'2 min cardio · Leg swings · Walking lunge BW 2×10 · Goblet squat light KB 2×10 · Box step-up BW 2×8 each · Bar ramp-up front squat',
+      warmup:'2 min cardio · Leg swings · Walking lunge BW 2×10 · Goblet squat light KB 2×10 · Box step-up BW 2×8 each · Bar ramp-up back squat',
       moves:[
+        {n:'Landmine thruster',b:'—',f:'Landmine thruster',fl:'70 lb plates',sets:3,reps:'5',sec:'Power primer'},
         {n:'Sled push + pull circuit',b:'—',f:'3 rounds 20 yd push → pull',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
-        {n:'Front squat',b:'175 lb',f:'Barbell front squat',fl:'155 lb',sets:4,reps:'10'},
-        {n:'KB goblet squat',b:'175 lb',f:'KB goblet squat',fl:'75 lb',sets:4,reps:'10'},
-        {n:'Cable straight-arm pulldown',b:'95 lb',f:'Cable straight-arm pulldown',fl:'25 lb',sets:4,reps:'20'},
-        {n:'⟳ TRI-SET: Goblet reverse lunge',b:'BW × 10/leg',f:'Goblet reverse lunge',fl:'35 lb × 10/leg',sets:4,reps:'10/leg',sec:'Tri-set'},
-        {n:'⟳ Tibialis raise',b:'—',f:'Tibialis raise',fl:'35 lb',sets:4,reps:'15'},
-        {n:'⟳ Calf raise',b:'BW',f:'Standing calf raise',fl:'+45 lb plate',sets:4,reps:'20'},
-        {n:"KB farmer's carry",b:'—',f:'Farmer carry bars',fl:'53 lb each',sets:3,reps:'40 yd',sec:'Carry'},
+        {n:'Back squat',b:'175 lb',f:'Barbell back squat',fl:'185 lb',sets:4,reps:'8'},
+        {n:'KB goblet squat',b:'175 lb',f:'KB goblet squat',fl:'75 lb',sets:4,reps:'8',_odd:'KB goblet squat',_oddfl:'75 lb',_oddreps:'8',_even:'Landmine squat',_evenfl:'95 lb plates',_evenreps:'8',_track:'odd-load-even-load-squat'},
+        {n:'⟳ TRI-SET: Goblet reverse lunge',b:'BW × 9/leg',f:'Goblet reverse lunge',fl:'40 lb × 9/leg',sets:3,reps:'9/leg',sec:'Tri-set'},
+        {n:'⟳ Tibialis raise',b:'—',f:'Tibialis raise',fl:'25 lb',sets:3,reps:'16'},
+        {n:'⟳ Calf raise',b:'BW',f:'Standing calf raise',fl:'+45 lb plate',sets:3,reps:'21'},
+        {n:"KB farmer's carry",b:'—',f:'Farmer carry bars',fl:'53 lb each',sets:3,reps:'90s',sec:'Carry'},
       ]},
   ]
 };
@@ -874,7 +875,7 @@ var RECOVERY_PLAN = {
 };
 
 let ST = {
-  week:2, progDay:0, randDay:0,
+  week:5, progDay:0, randDay:0,
   program: JSON.parse(JSON.stringify(W17)),
   logs:[...SEED_LOGS],
   eq:[...DEFAULT_EQ],
@@ -1174,24 +1175,25 @@ function generateLocalWeek(targetWeek, fromWeek, perf, notes, parsedSignals){
   const isEvenWeek = weekNum % 2 === 0;
 
   // ODD/EVEN MOVEMENT SWAP — apply before progression
-  // Movements with _track:'odd-load-even-reps' swap between two variations
   base.forEach(day => {
     day.moves.forEach(m => {
-      if(m._track !== 'odd-load-even-reps') return;
-      if(isEvenWeek){
-        // Even week: DB floor press, rep progression only
-        m.f = m._even;
-        m.fl = m._evenfl;
-        m.reps = m._evenreps;
-        m.n = 'DB floor press';
-        m._currentTrack = 'even';
-      } else {
-        // Odd week: barbell bench, load progression only
-        m.f = m._odd;
-        m.fl = m._oddfl;
-        m.reps = m._oddreps;
-        m.n = 'Barbell bench press';
-        m._currentTrack = 'odd';
+      if(m._track === 'odd-load-even-reps'){
+        if(isEvenWeek){
+          m.f = m._even; m.fl = m._evenfl; m.reps = m._evenreps;
+          m.n = 'DB floor press'; m._currentTrack = 'even';
+        } else {
+          m.f = m._odd; m.fl = m._oddfl; m.reps = m._oddreps;
+          m.n = 'Barbell bench press'; m._currentTrack = 'odd';
+        }
+      }
+      if(m._track === 'odd-load-even-load-squat'){
+        if(isEvenWeek){
+          m.f = m._even; m.fl = m._evenfl; m.reps = m._evenreps;
+          m.n = 'Landmine squat'; m._currentTrack = 'even';
+        } else {
+          m.f = m._odd; m.fl = m._oddfl; m.reps = m._oddreps;
+          m.n = 'KB goblet squat'; m._currentTrack = 'odd';
+        }
       }
     });
   });
@@ -1206,17 +1208,18 @@ function generateLocalWeek(targetWeek, fromWeek, perf, notes, parsedSignals){
       // For tracked movements — different progression rules per track
       if(m._track === 'odd-load-even-reps'){
         if(m._currentTrack === 'even'){
-          // Even (DB floor): reps only, never load
-          if(m.reps && m.reps !== 'see loads'){
-            m.reps = progressRepsField(m.reps, false, action);
-            // Store updated reps back to even track
-            m._evenreps = m.reps;
-          }
+          if(m.reps && m.reps !== 'see loads') m.reps = progressRepsField(m.reps, false, action);
+          m._evenreps = m.reps;
         } else {
-          // Odd (barbell): load only, never reps
           if(m.fl) m.fl = progressLoadField(m.fl, true, action);
           m._oddfl = m.fl;
         }
+        return;
+      }
+      if(m._track === 'odd-load-even-load-squat'){
+        if(m.fl) m.fl = progressLoadField(m.fl, true, action);
+        if(m._currentTrack === 'even') m._evenfl = m.fl;
+        else m._oddfl = m.fl;
         return;
       }
 
@@ -1457,7 +1460,7 @@ function saveState(){
 function loadState(){
   try{
     // Version flag — only bump this when program STRUCTURE changes (not bug fixes)
-    const appVersion = 'v4-week2';
+    const appVersion = 'v5-week5';
     const storedVersion = localStorage.getItem('wt_version');
     if(storedVersion !== appVersion){
       // Only wipe program/week — preserve logs, equipment, chicas, api key, tv
@@ -1479,7 +1482,7 @@ function loadState(){
 }
 
 // INIT
-const BUILD_STAMP = '2025-08-01';
+const BUILD_STAMP = '2025-08-12';
 loadState();
 var stampEl = document.getElementById('phase-label');
 if(stampEl) stampEl.textContent = 'BUILD ' + BUILD_STAMP;
@@ -1907,10 +1910,9 @@ function buildSystemPrompt(){
     'TV BODYWEIGHT:\n' + bwSummary + '\n\n' +
     'RECENT LOGS:\n' + (recentLogs||'None') + '\n\n' +
     'RULES: 4-day split Day0=Upper A, Day1=Lower A, Day2=Upper B, Day3=Lower B. Barbell bench now allowed (Mikolo K6 cage with safeties). Hex bar DL. DB RDL permanent. RPE 8. Sets max 4. Deload week 4. Core on upper days only.\n' +
-    'CHEST PRESS — TWO-TRACK SYSTEM:\n' +
-    '- ODD weeks: Barbell bench press @ current odd load. Progress LOAD only, never reps.\n' +
-    '- EVEN weeks: DB floor press @ current even load. Progress REPS only (target ceiling 4x15-16), never load.\n' +
-    '- These are separate progression tracks. Never cross-progress them.\n' +
+    'CHEST PRESS — ODD weeks: Barbell bench press (progress load). EVEN weeks: DB floor press (progress reps, ceiling 4x15-16). Never cross-progress.\n' +
+    'SQUAT ROTATION — ODD weeks: KB goblet squat (progress load). EVEN weeks: Landmine squat (progress load independently). Both on Lower B.\n' +
+    'LOWER B STRUCTURE: Landmine thruster (power primer) → Sled → Back squat → Goblet/Landmine squat (rotating) → Tri-set → Farmer carry (time-based).\n' +
     'EQUIPMENT: Bands, DBs 15-100lb, KBs 10-70lb, barbell, hex bar, Mikolo K6 cable crossover, sled, TRX. Pickleball 4x/week additional load.\n' +
     'Be direct and concise.';
 }
