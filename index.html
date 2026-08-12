@@ -448,7 +448,7 @@ const CHECKPOINTS = {
         {n:'Barbell hang clean + push press complex',b:'—',f:'Barbell complex',fl:'140 lb',sets:4,reps:'5',sec:'Power primer'},
         {n:'Barbell bench press',b:'220 lb',f:'Barbell bench press',fl:'170 lb',sets:4,reps:'8',_odd:'Barbell bench press',_oddfl:'170 lb',_oddreps:'8',_even:'DB floor press',_evenfl:'70 lb each',_evenreps:'8',_track:'odd-load-even-reps'},
         {n:'Shoulder press',b:'115 lb',f:'DB shoulder press',fl:'60 lb each',sets:4,reps:'8'},
-        {n:'Cable crossover fly',b:'55 lb',f:'Cable crossover fly (high-to-low)',fl:'15 lb/side',sets:4,reps:'19'},
+        {n:'Cable chest fly',b:'55 lb',f:'Cable chest fly (mid pulley)',fl:'15 lb/side',sets:4,reps:'19'},
         {n:'Cable lateral raise',b:'25 lb',f:'Cable lateral raise (low pulley)',fl:'10 lb/side',sets:4,reps:'19'},
         {n:'Cable pushdown (rope)',b:'105 lb',f:'Cable pushdown (rope)',fl:'67.5 lb',sets:3,reps:'15'},
         {n:'Cable overhead tricep ext',b:'100 lb',f:'Cable overhead tricep ext',fl:'70 lb',sets:3,reps:'15'},
@@ -474,7 +474,7 @@ const CHECKPOINTS = {
         {n:'Lat pulldown',b:'155 lb',f:'Cable lat pulldown (bar)',fl:'160 lb',sets:4,reps:'10'},
         {n:'Banded row',b:'245 lb',f:'Cable seated row',fl:'160 lb',sets:4,reps:'10'},
         {n:'Cable face pull',b:'55 lb',f:'Cable face pull (rope)',fl:'35 lb',sets:4,reps:'25'},
-        {n:'Rear delt fly',b:'20 lb',f:'DB rear delt fly',fl:'12.5 lb/side',sets:3,reps:'23'},
+        {n:'Cable crossover fly',b:'20 lb',f:'Cable crossover fly (high-to-low)',fl:'15 lb/side',sets:3,reps:'23'},
         {n:'Cable curl (bar)',b:'105 lb',f:'Cable curl (bar)',fl:'85 lb',sets:3,reps:'11'},
         {n:'Cable single-arm curl',b:'95 lb',f:'Cable single-arm curl',fl:'15 lb',sets:3,reps:'22'},
         {n:'Cable straight-arm pulldown',b:'95 lb',f:'Cable straight-arm pulldown',fl:'25 lb',sets:4,reps:'21'},
@@ -546,7 +546,7 @@ const POOL = {
     {n:'Pike push-up',b:'Banded pike push-up',bl:'40 lb',f:'Pike push-up',fl:'BW'},
   ],
   chest_acc:[
-    {n:'Cable crossover fly',b:'Banded chest fly',bl:'50 lb',f:'Cable crossover fly (high-to-low)',fl:'15 lb/side'},
+    {n:'Cable chest fly',b:'Banded chest fly',bl:'50 lb',f:'Cable chest fly (mid pulley)',fl:'15 lb/side'},
     {n:'DB incline fly',b:'Banded incline fly',bl:'40 lb',f:'DB incline fly',fl:'20 lb each'},
     {n:'DB pullover',b:'Banded pullover',bl:'40 lb',f:'DB pullover',fl:'50 lb'},
     {n:'KB pullover',b:'Banded pullover',bl:'40 lb',f:'KB pullover',fl:'53 lb'},
@@ -1482,7 +1482,7 @@ function loadState(){
 }
 
 // INIT
-const BUILD_STAMP = '2025-08-12';
+const BUILD_STAMP = '2025-08-12b';
 loadState();
 var stampEl = document.getElementById('phase-label');
 if(stampEl) stampEl.textContent = 'BUILD ' + BUILD_STAMP;
