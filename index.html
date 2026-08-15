@@ -373,6 +373,14 @@ textarea { min-height: 80px; resize: vertical; }
       <div id="recovery-content" style="padding-bottom:1rem;"></div>
     </div>
 
+    <!-- NUTRITION -->
+    <div class="screen" id="s-nutrition">
+      <div class="screen-header">
+        <div><div class="screen-title">FUEL <span>PLAN</span></div><div class="screen-sub">Vegan · ~3,000–3,200 cal · 185–200g protein</div></div>
+      </div>
+      <div id="nutrition-content" style="padding-bottom:1rem;"></div>
+    </div>
+
     <!-- EQUIPMENT -->
     <div class="screen" id="s-equipment">
       <div class="screen-header"><div class="screen-title">EQUIP<span>MENT</span></div></div>
@@ -407,14 +415,6 @@ textarea { min-height: 80px; resize: vertical; }
       <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       History
     </button>
-    <button class="nav-btn" onclick="showScreen('random',this)">
-      <svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
-      Random
-    </button>
-    <button class="nav-btn" onclick="showScreen('generate',this)">
-      <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.49"/></svg>
-      Generate
-    </button>
     <button class="nav-btn" onclick="showScreen('equipment',this)">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
       Gear
@@ -426,6 +426,10 @@ textarea { min-height: 80px; resize: vertical; }
     <button class="nav-btn" onclick="showScreen('chat',this)">
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       Coach
+    </button>
+    <button class="nav-btn" onclick="showScreen('nutrition',this)">
+      <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+      Fuel
     </button>
     <button class="nav-btn" onclick="showScreen('chicas',this)">
       <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -464,6 +468,7 @@ const CHECKPOINTS = {
         {n:'Barbell good morning',b:'—',f:'Barbell good morning',fl:'95 lb',sets:3,reps:'10'},
         {n:'Cable leg curl',b:'70 lb',f:'Cable leg curl (ankle)',fl:'45 lb',sets:3,reps:'21'},
         {n:'Hip thrusts / KB swing',b:'BW × 32',f:'KB swing',fl:'60 lb × 24',sets:4,reps:'see loads'},
+        {n:'Single leg cable extension',b:'—',f:'Single leg cable extension',fl:'20 lb/side',sets:3,reps:'12/leg'},
         {n:'⟳ TRI-SET: Goblet reverse lunge',b:'BW × 9/leg',f:'Goblet reverse lunge',fl:'40 lb × 9/leg',sets:3,reps:'9/leg',sec:'Tri-set'},
         {n:'⟳ Tibialis raise',b:'—',f:'Tibialis raise',fl:'25 lb',sets:3,reps:'17'},
         {n:'⟳ Calf raise',b:'BW',f:'Standing calf raise',fl:'+45 lb plate',sets:3,reps:'22'},
@@ -892,6 +897,7 @@ function showScreen(id,btn){
   if(id==='equipment')renderEq();
   if(id==='random')renderRandDay();
   if(id==='chat')initChat();
+  if(id==='nutrition')renderNutrition();
   if(id==='chicas')initChicas();
   if(id==='recovery')renderRecovery();
 }
@@ -1482,7 +1488,7 @@ function loadState(){
 }
 
 // INIT
-const BUILD_STAMP = '2025-08-12b';
+const BUILD_STAMP = '2025-08-13';
 loadState();
 var stampEl = document.getElementById('phase-label');
 if(stampEl) stampEl.textContent = 'BUILD ' + BUILD_STAMP;
@@ -2137,6 +2143,12 @@ function applyCoachUpdate(btn){
     renderRecovery();
     navigateTo = 'recovery';
   }
+  if(pendingCoachUpdate.nutrition){
+    Object.assign(NUTRITION_PLAN, pendingCoachUpdate.nutrition);
+    saveNutritionState();
+    renderNutrition();
+    navigateTo = 'nutrition';
+  }
   if(pendingCoachUpdate.week !== null && pendingCoachUpdate.week !== undefined){
     ST.week = pendingCoachUpdate.week;
     saveState();
@@ -2527,6 +2539,166 @@ function readChicasWorkout(){
 
 // Init
 loadChicasState();
+
+// ============================================================
+// NUTRITION TAB
+// ============================================================
+
+var NUTRITION_PLAN = {
+  targets: {
+    training: { calories: 3100, protein: 195, carbs: 325, fat: 90 },
+    rest: { calories: 2700, protein: 185, carbs: 270, fat: 85 },
+  },
+  timing: [
+    { time: 'Morning (pre-workout)', note: 'Carb-forward. 60–90 min before lifting. Oats, banana, toast with nut butter.' },
+    { time: 'Post-workout (within 30 min)', note: 'Protein + fast carbs. Shake + fruit, or tofu scramble + rice.' },
+    { time: 'Pre-pickleball', note: 'Easy carbs 60 min before. Banana, dates, rice cakes. Not a heavy meal.' },
+    { time: 'Post-pickleball', note: 'Full meal. Protein + complex carbs + vegetables.' },
+    { time: 'Before bed', note: 'Slow protein. Edamame, hemp seeds, soy milk, or slow-digesting legumes.' },
+  ],
+  proteinSources: [
+    { food: 'Tempeh (100g)', protein: '19g', calories: '193', notes: 'Fermented, easier to digest than tofu. Versatile.' },
+    { food: 'Firm tofu (100g)', protein: '17g', calories: '144', notes: 'High protein, neutral flavor. Press and marinate.' },
+    { food: 'Edamame (1 cup)', protein: '17g', calories: '188', notes: 'Complete amino acid profile. Great snack.' },
+    { food: 'Lentils cooked (1 cup)', protein: '18g', calories: '230', notes: 'High carb too — account for it.' },
+    { food: 'Black beans cooked (1 cup)', protein: '15g', calories: '227', notes: 'Pair with rice for complete protein.' },
+    { food: 'Chickpeas cooked (1 cup)', protein: '15g', calories: '269', notes: 'Roast for snacking, blend for hummus.' },
+    { food: 'Seitan (100g)', protein: '25g', calories: '143', notes: 'Highest plant protein per gram. Wheat-based.' },
+    { food: 'Vegan protein powder (1 scoop)', protein: '20–25g', calories: '120–150', notes: 'Pea/rice blend best for amino profile.' },
+    { food: 'Hemp seeds (3 tbsp)', protein: '10g', calories: '166', notes: 'Complete protein + omega-3. Easy to add anywhere.' },
+    { food: 'Nutritional yeast (2 tbsp)', protein: '8g', calories: '45', notes: 'B12 source. Add to everything.' },
+    { food: 'Soy milk (1 cup)', protein: '8g', calories: '100', notes: 'Highest protein of all plant milks.' },
+    { food: 'Peanut butter (2 tbsp)', protein: '8g', calories: '190', notes: 'High fat — use strategically.' },
+  ],
+  mealPlan: null, // populated by Coach
+  dayType: 'training',
+  notes: 'Vegan athlete, 185 lb, 49. Goal: slow muscle gain. 4 lifting days + 3 pickleball days/week. Protein target is hard — prioritize it at every meal.',
+};
+
+function loadNutritionState(){
+  try{
+    var s = localStorage.getItem('wt_nutrition');
+    if(s){ var d = JSON.parse(s); Object.assign(NUTRITION_PLAN, d); }
+  }catch(e){}
+}
+
+function saveNutritionState(){
+  try{ localStorage.setItem('wt_nutrition', JSON.stringify(NUTRITION_PLAN)); }catch(e){}
+}
+
+function renderNutrition(){
+  var el = document.getElementById('nutrition-content');
+  if(!el) return;
+  var plan = NUTRITION_PLAN;
+  var t = plan.dayType === 'training' ? plan.targets.training : plan.targets.rest;
+  var html = '';
+
+  // Day type toggle
+  html += '<div style="display:flex;gap:8px;padding:12px 16px 0;">';
+  html += '<button class="btn ' + (plan.dayType==='training'?'btn-primary':'btn-ghost') + '" style="flex:1;font-size:13px;" onclick="setNutritionDay(\'training\')">Training Day</button>';
+  html += '<button class="btn ' + (plan.dayType==='rest'?'btn-primary':'btn-ghost') + '" style="flex:1;font-size:13px;" onclick="setNutritionDay(\'rest\')">Rest Day</button>';
+  html += '</div>';
+
+  // Macro targets
+  html += '<div class="section-divider">Daily Targets · ' + (plan.dayType==='training'?'Training':'Rest') + ' Day</div>';
+  html += '<div class="metric-grid" style="margin:0 16px;">';
+  html += '<div class="metric"><div class="metric-label">Calories</div><div class="metric-value">' + t.calories + '</div></div>';
+  html += '<div class="metric"><div class="metric-label">Protein</div><div class="metric-value">' + t.protein + 'g</div></div>';
+  html += '<div class="metric"><div class="metric-label">Carbs</div><div class="metric-value">' + t.carbs + 'g</div></div>';
+  html += '<div class="metric"><div class="metric-label">Fat</div><div class="metric-value">' + t.fat + 'g</div></div>';
+  html += '</div>';
+
+  // Meal timing
+  html += '<div class="section-divider">Meal Timing</div>';
+  html += '<div class="card">';
+  plan.timing.forEach(function(t){
+    html += '<div style="padding:6px 0;border-bottom:0.5px solid var(--rule);">';
+    html += '<div style="font-size:12px;font-weight:500;color:var(--accent);">' + t.time + '</div>';
+    html += '<div style="font-size:11.5px;color:var(--mid);line-height:1.5;margin-top:2px;">' + t.note + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // AI meal generator
+  html += '<div class="section-divider">Today\'s Meal Plan</div>';
+  html += '<div style="padding:0 16px 10px;">';
+  html += '<div style="display:flex;gap:8px;margin-bottom:8px;">';
+  html += '<button class="btn btn-primary" style="flex:1;font-size:12px;" onclick="generateMealPlan()">Generate today\'s meals ↗</button>';
+  html += '</div>';
+  html += '<div id="meal-plan-output">';
+  if(plan.mealPlan){
+    html += '<div class="card" style="margin-top:0;white-space:pre-wrap;font-size:12.5px;line-height:1.7;">' + plan.mealPlan + '</div>';
+  } else {
+    html += '<div style="font-size:12px;color:var(--mid);padding:8px 0;">Tap Generate to get a full day of vegan meals matched to your macro targets.</div>';
+  }
+  html += '</div></div>';
+
+  // Protein sources reference
+  html += '<div class="section-divider">Protein Sources Reference</div>';
+  html += '<div class="card" style="padding:0;overflow:hidden;"><table class="prog-table"><thead><tr><th style="width:38%">Food</th><th style="width:14%;text-align:center">Protein</th><th style="width:14%;text-align:center">Calories</th><th>Notes</th></tr></thead><tbody>';
+  plan.proteinSources.forEach(function(s, i){
+    html += '<tr' + (i%2===1?' style="background:var(--surface);"':'') + '>';
+    html += '<td><div class="ex-name" style="font-size:12px;">' + s.food + '</div></td>';
+    html += '<td class="num-cell" style="color:var(--accent);font-weight:500;">' + s.protein + '</td>';
+    html += '<td class="num-cell">' + s.calories + '</td>';
+    html += '<td style="font-size:11px;color:var(--mid);">' + s.notes + '</td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+
+  el.innerHTML = html;
+}
+
+function setNutritionDay(type){
+  NUTRITION_PLAN.dayType = type;
+  saveNutritionState();
+  renderNutrition();
+}
+
+async function generateMealPlan(){
+  var apiKey = getApiKey();
+  if(!apiKey){ addBubble('Set your API key in the Coach tab first.', 'ai'); showScreen('chat', document.querySelector('.nav-btn[onclick*="chat"]')); return; }
+
+  var output = document.getElementById('meal-plan-output');
+  if(output) output.innerHTML = '<div style="font-size:12px;color:var(--mid);padding:8px 0;">Generating your meal plan...</div>';
+
+  var t = NUTRITION_PLAN.dayType === 'training' ? NUTRITION_PLAN.targets.training : NUTRITION_PLAN.targets.rest;
+  var prompt = 'Create a full day vegan meal plan for a 185 lb, 49-year-old male athlete.\n' +
+    'Targets: ' + t.calories + ' calories, ' + t.protein + 'g protein, ' + t.carbs + 'g carbs, ' + t.fat + 'g fat.\n' +
+    'This is a ' + NUTRITION_PLAN.dayType + ' day.\n' +
+    'Diet: strictly vegan, mostly whole food but protein powder is fine.\n' +
+    'Special notes: ' + NUTRITION_PLAN.notes + '\n\n' +
+    'Format: Breakfast, Lunch, Dinner, and 2 Snacks. For each meal list the foods, portions, and approximate macros.\n' +
+    'End with a daily total. Keep it practical and varied. Prioritize protein at every meal.\n' +
+    'Be specific with portions (grams, cups, etc).';
+
+  try{
+    var r = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-5',
+        max_tokens:1200,
+        messages:[{role:'user', content:prompt}]
+      })
+    });
+    var d = await r.json();
+    if(d.error){ if(output) output.innerHTML = '<div style="color:var(--accent);font-size:12px;padding:8px 0;">Error: ' + d.error.message + '</div>'; return; }
+    var reply = d.content.filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
+    NUTRITION_PLAN.mealPlan = reply;
+    saveNutritionState();
+    if(output) output.innerHTML = '<div class="card" style="margin-top:0;white-space:pre-wrap;font-size:12.5px;line-height:1.7;">' + reply.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
+  }catch(e){
+    if(output) output.innerHTML = '<div style="color:var(--accent);font-size:12px;padding:8px 0;">Could not reach server. Check your connection.</div>';
+  }
+}
+
+loadNutritionState();
 
 // ============================================================
 // RECOVERY PLAN
