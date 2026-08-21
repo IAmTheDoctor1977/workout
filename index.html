@@ -494,7 +494,7 @@ const CHECKPOINTS = {
         {n:'Landmine thruster',b:'—',f:'Landmine thruster',fl:'70 lb plates',sets:3,reps:'5',sec:'Power primer'},
         {n:'Sled push + pull circuit',b:'—',f:'3 rounds 20 yd push → pull',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
         {n:'Back squat',b:'175 lb',f:'Barbell back squat',fl:'185 lb',sets:4,reps:'8',_repThresholds:[[205,8],[245,7],[285,6],[325,5],[330,4]]},
-        {n:'KB goblet squat',b:'175 lb',f:'KB goblet squat',fl:'75 lb',sets:4,reps:'8',_odd:'KB goblet squat',_oddfl:'75 lb',_oddreps:'8',_even:'Landmine squat',_evenfl:'95 lb plates',_evenreps:'8',_track:'odd-load-even-load-squat'},
+        {n:'Landmine squat',b:'—',f:'Landmine squat',fl:'95 lb plates',sets:4,reps:'8'},
         {n:'⟳ TRI-SET: Goblet reverse lunge',b:'BW × 9/leg',f:'Goblet reverse lunge',fl:'40 lb × 9/leg',sets:3,reps:'9/leg',sec:'Tri-set',_repCeiling:14},
         {n:'⟳ Tibialis raise',b:'—',f:'Tibialis raise',fl:'25 lb',sets:3,reps:'16',_repCeiling:25},
         {n:'⟳ Calf raise',b:'BW',f:'Standing calf raise',fl:'+45 lb plate',sets:3,reps:'21',_repCeiling:30},
@@ -1193,15 +1193,7 @@ function generateLocalWeek(targetWeek, fromWeek, perf, notes, parsedSignals){
           m.n = 'Barbell bench press'; m._currentTrack = 'odd';
         }
       }
-      if(m._track === 'odd-load-even-load-squat'){
-        if(isEvenWeek){
-          m.f = m._even; m.fl = m._evenfl; m.reps = m._evenreps;
-          m.n = 'Landmine squat'; m._currentTrack = 'even';
-        } else {
-          m.f = m._odd; m.fl = m._oddfl; m.reps = m._oddreps;
-          m.n = 'KB goblet squat'; m._currentTrack = 'odd';
-        }
-      }
+
     });
   });
 
@@ -1251,12 +1243,7 @@ function generateLocalWeek(targetWeek, fromWeek, perf, notes, parsedSignals){
         }
         return;
       }
-      if(m._track === 'odd-load-even-load-squat'){
-        if(m.fl) m.fl = progressLoadField(m.fl, true, action);
-        if(m._currentTrack === 'even') m._evenfl = m.fl;
-        else m._oddfl = m.fl;
-        return;
-      }
+
 
       if(m.b) m.b = progressLoadField(m.b, isPrimary, action);
       if(m.fl) m.fl = progressLoadField(m.fl, isPrimary, action);
@@ -1517,7 +1504,7 @@ function loadState(){
 }
 
 // INIT
-const BUILD_STAMP = '2025-08-15';
+const BUILD_STAMP = '2025-08-15b';
 loadState();
 var stampEl = document.getElementById('phase-label');
 if(stampEl) stampEl.textContent = 'BUILD ' + BUILD_STAMP;
@@ -1946,8 +1933,7 @@ function buildSystemPrompt(){
     'RECENT LOGS:\n' + (recentLogs||'None') + '\n\n' +
     'RULES: 4-day split Day0=Upper A, Day1=Lower A, Day2=Upper B, Day3=Lower B. Barbell bench now allowed (Mikolo K6 cage with safeties). Hex bar DL. DB RDL permanent. RPE 8. Sets max 4. Deload week 4. Core on upper days only.\n' +
     'CHEST PRESS — ODD weeks: Barbell bench press (progress load). EVEN weeks: DB floor press (progress reps, ceiling 4x15-16). Never cross-progress.\n' +
-    'SQUAT ROTATION — ODD weeks: KB goblet squat (progress load). EVEN weeks: Landmine squat (progress load independently). Both on Lower B.\n' +
-    'LOWER B STRUCTURE: Landmine thruster (power primer) → Sled → Back squat → Goblet/Landmine squat (rotating) → Tri-set → Farmer carry (time-based).\n' +
+    'LOWER B STRUCTURE: Landmine thruster (power primer) → Sled → Back squat → Landmine squat (every week, progress load) → Tri-set → Farmer carry (time-based).\n' +
     'EQUIPMENT: Bands, DBs 15-100lb, KBs 10-70lb, barbell, hex bar, Mikolo K6 cable crossover, sled, TRX. Pickleball 4x/week additional load.\n' +
     'Be direct and concise.';
 }
