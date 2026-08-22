@@ -168,6 +168,11 @@ textarea { min-height: 80px; resize: vertical; }
         <div class="metric"><div class="metric-label">Next deload</div><div class="metric-value sm" id="m-deload">Wk 4</div></div>
       </div>
       <div class="day-chips" id="prog-day-chips"></div>
+      <div style="padding:8px 16px 0;display:flex;gap:8px;">
+        <button class="btn btn-primary" style="flex:1;font-size:12px;" onclick="quickGenerate()">Generate Week <span id="gen-week-num"></span> ↗</button>
+        <button class="btn btn-ghost" style="font-size:12px;" onclick="showGenOptions()">Options</button>
+      </div>
+      <div id="gen-quick-result" style="padding:0 16px;font-size:11.5px;color:var(--mid);font-family:var(--font-mono);"></div>
       <div class="warmup-strip"><div class="warmup-label">Warm-up</div><div class="warmup-text" id="prog-warmup"></div></div>
       <div class="card" style="padding:0; overflow:hidden;">
         <div class="table-wrap"><table class="prog-table" id="prog-table"></table></div>
@@ -1504,10 +1509,69 @@ function loadState(){
 }
 
 // INIT
-const BUILD_STAMP = '2025-08-15b';
+const BUILD_STAMP = '2025-08-16';
 loadState();
 var stampEl = document.getElementById('phase-label');
 if(stampEl) stampEl.textContent = 'BUILD ' + BUILD_STAMP;
+var genWkEl = document.getElementById('gen-week-num');
+if(genWkEl) genWkEl.textContent = ST.week + 1;
+function quickGenerate(){
+  const nextWeek = ST.week + 1;
+  const resultEl = document.getElementById('gen-quick-result');
+  if(resultEl) resultEl.textContent = 'Generating Week ' + nextWeek + '...';
+
+  // Check for deload
+  const result = generateLocalWeek(nextWeek, ST.week, 'hit', '', {});
+  if(result && result.deload){
+    ST.program = result.program;
+    ST.week = nextWeek;
+    saveState();
+    renderProgChips();
+    renderProgDay(ST.progDay);
+    updateDeloadIndicator();
+    document.getElementById('gen-week-num').textContent = ST.week + 1;
+    if(resultEl) resultEl.textContent = '\u26a1 Week ' + nextWeek + ' is a DELOAD — sets \u00f72, reps -30%, loads held.';
+    return;
+  }
+  ST.program = result;
+  ST.week = nextWeek;
+  saveState();
+  document.getElementById('m-week').textContent = ST.week;
+  document.getElementById('wk-num').textContent = ST.week;
+  document.getElementById('log-week') && (document.getElementById('log-week').value = ST.week);
+  document.getElementById('gen-week-num').textContent = ST.week + 1;
+  renderProgChips();
+  renderProgDay(ST.progDay);
+  updateDeloadIndicator();
+  if(resultEl) resultEl.textContent = 'Week ' + nextWeek + ' generated \u2713';
+  setTimeout(function(){ if(resultEl) resultEl.textContent = ''; }, 3000);
+}
+
+function showGenOptions(){
+  // Simple prompt-based options for now
+  var notes = prompt('Any performance notes? (e.g. "bench felt heavy, hold it")\nLeave blank to progress everything.');
+  if(notes === null) return; // cancelled
+  var perf = 'hit';
+  if(notes && /(heavy|hard|fail|miss|stall)/i.test(notes)) perf = 'mixed';
+  const nextWeek = ST.week + 1;
+  const result = generateLocalWeek(nextWeek, ST.week, perf, notes, {});
+  if(result && result.deload){
+    ST.program = result.program;
+  } else {
+    ST.program = result;
+  }
+  ST.week = nextWeek;
+  saveState();
+  document.getElementById('m-week').textContent = ST.week;
+  document.getElementById('wk-num').textContent = ST.week;
+  document.getElementById('gen-week-num').textContent = ST.week + 1;
+  renderProgChips();
+  renderProgDay(ST.progDay);
+  updateDeloadIndicator();
+  const resultEl = document.getElementById('gen-quick-result');
+  if(resultEl){ resultEl.textContent = 'Week ' + nextWeek + ' generated \u2713'; setTimeout(function(){ resultEl.textContent=''; },3000); }
+}
+
 function updateDeloadIndicator(){
   const nextDeload = Math.ceil((ST.week+1)/4)*4;
   const el = document.getElementById('m-deload');
@@ -1894,48 +1958,30 @@ function getApiKey(){ return localStorage.getItem('wt_api_key')||''; }
 function buildSystemPrompt(){
   const prog = ST.program || W17;
   const weekNum = ST.week;
+  // Compact program summary — name, load, reps only
   const progSummary = prog.map(function(day,di){
     const moves = day.moves.map(function(m,mi){
-      var s = '  [' + di + ',' + mi + '] ' + m.n + ': ' + m.sets + 'x' + m.reps;
-      if(m.fl && m.fl !== '') s += ' @ ' + m.fl;
-      if(m.b && m.b !== '—') s += ' (band: ' + m.b + ')';
+      var s = '[' + di + ',' + mi + '] ' + m.n + ' ' + m.sets + 'x' + m.reps;
+      if(m.fl && m.fl !== '') s += ' @' + m.fl;
       return s;
-    }).join('\n');
-    return 'Day ' + di + ' — ' + day.label + ':\n' + moves;
-  }).join('\n\n');
-
-  const bwSummary = (TV_ST.bwDays||[]).map(function(day,di){
-    return 'BW Day ' + di + ' — ' + day.label + ':\n' +
-      (day.exercises||[]).map(function(ex,ei){
-        return '  [bw,' + di + ',' + ei + '] ' + ex.n + ': ' + ex.sets + 'x' + ex.reps;
-      }).join('\n');
-  }).join('\n\n');
-
-  const recentLogs = ST.logs.slice(0,3).map(function(l){
-    return 'Week ' + l.week + ' ' + l.day + ': ' + l.result + (l.notes ? ' — ' + l.notes : '');
+    }).join(' | ');
+    return 'D' + di + '(' + day.label.split('\u2014')[0].trim() + '): ' + moves;
   }).join('\n');
 
-  return '# OUTPUT FORMAT — READ FIRST\n\n' +
-    'When making ANY change, end your response with:\n\n' +
-    '[[PROGRAM_UPDATE]]\n' +
-    '{"ops":[{"op":"set","target":"prog","day":2,"move":7,"field":"reps","value":"8+8"},{"op":"set","target":"week","value":3}]}\n' +
-    '[[/PROGRAM_UPDATE]]\n\n' +
-    'op types: "set" (change a field), "rename" (change movement name), "add" (add exercise), "remove" (remove exercise)\n' +
-    'target: "prog" for main program, "bw" for TV bodyweight tab, "recovery" for recovery plan, "week" for the week counter\n' +
-    'WEEK COUNTER: To update the current week number use {"op":"set","target":"week","value":3} — value is just the number, no "lb". NEVER change a movement name when asked to update the week number. These are completely separate things.\n' +
-    'day and move are the EXACT indices shown in brackets [day,move] in the program below.\n' +
-    'field options: fl (free weight load), b (band load), reps, sets, n (name), f (label), cue, sec\n' +
-    'Always include units in load values: "75 lb" not "75". NEVER skip this block for any change.\n\n' +
-    '---\n\n' +
-    'COACH FOR: Ife (Ifeoluwa Togun) — Week ' + weekNum + '\n\n' +
+  const recentLogs = ST.logs.slice(0,2).map(function(l){
+    return 'Wk' + l.week + ' ' + l.day + ': ' + l.result;
+  }).join(' | ');
+
+  return '# TOGUN GYM COACH — Week ' + weekNum + '\n\n' +
+    'OUTPUT: End ANY change response with:\n[[PROGRAM_UPDATE]]\n{"ops":[{"op":"set","target":"prog","day":0,"move":0,"field":"fl","value":"75 lb"},{"op":"set","target":"week","value":6}]}\n[[/PROGRAM_UPDATE]]\n\n' +
+    'op: "set"|"rename"|"add"|"remove". target: "prog"|"bw"|"recovery"|"week". day/move = indices below. field: fl/b/reps/sets/n/f. Units always in values.\n\n' +
     'PROGRAM:\n' + progSummary + '\n\n' +
-    'TV BODYWEIGHT:\n' + bwSummary + '\n\n' +
-    'RECENT LOGS:\n' + (recentLogs||'None') + '\n\n' +
-    'RULES: 4-day split Day0=Upper A, Day1=Lower A, Day2=Upper B, Day3=Lower B. Barbell bench now allowed (Mikolo K6 cage with safeties). Hex bar DL. DB RDL permanent. RPE 8. Sets max 4. Deload week 4. Core on upper days only.\n' +
-    'CHEST PRESS — ODD weeks: Barbell bench press (progress load). EVEN weeks: DB floor press (progress reps, ceiling 4x15-16). Never cross-progress.\n' +
-    'LOWER B STRUCTURE: Landmine thruster (power primer) → Sled → Back squat → Landmine squat (every week, progress load) → Tri-set → Farmer carry (time-based).\n' +
-    'EQUIPMENT: Bands, DBs 15-100lb, KBs 10-70lb, barbell, hex bar, Mikolo K6 cable crossover, sled, TRX. Pickleball 4x/week additional load.\n' +
-    'Be direct and concise.';
+    'LOGS: ' + (recentLogs||'None') + '\n\n' +
+    'RULES: 4-day U/L/U/L. Barbell bench (K6 cage). Hex bar DL. DB RDL permanent. RPE 8 max 4 sets. Deload wk 4.\n' +
+    'Bench: ODD=barbell(load progress) EVEN=DB floor(rep progress ceil 15-16).\n' +
+    'Lower B: Landmine thruster→Sled→Back squat→Landmine squat→Tri-set→Farmer carry(90s).\n' +
+    'Week generation: use the Generate button on Program tab, not Coach.\n' +
+    'Pickleball 4x/wk. Vegan athlete 185lb 49yo.';
 }
 
 function parseAndApplyProgramUpdate(reply){
