@@ -470,8 +470,8 @@ const CHECKPOINTS = {
       warmup:"2 min cardio · Hip circles 30s each · 90/90 hip switch 10 each · World's greatest stretch 5 each · Leg swings · Glute bridge 2×15 · Banded good morning 2×10 · BW RDL 2×8 · Bar ramp-up → 90% ×1",
       moves:[
         {n:'Sled harness sprint',b:'—',f:'4 × 15 yd light',fl:'',sets:4,reps:'15 yd',sec:'Sled primer'},
-        {n:'Hex bar deadlift',b:'305 lb',f:'Hex bar deadlift',fl:'285 lb',sets:4,reps:'8',_repThresholds:[[295,8],[340,7],[385,6],[425,5],[430,4]]},
-        {n:'DB Romanian deadlift',b:'195 lb',f:'DB Romanian deadlift',fl:'85 lb each',sets:4,reps:'8',_repThresholds:[[90,8],[95,7],[100,6]]},
+        {n:'Hex bar deadlift',b:'305 lb',f:'Hex bar deadlift',fl:'285 lb',sets:4,reps:'8',_odd:'Hex bar deadlift',_oddfl:'285 lb',_oddreps:'8',_even:'Landmine deadlift',_evenfl:'195 lb plates',_evenreps:'8',_track:'odd-load-even-load-dl',_repThresholds:[[295,8],[340,7],[385,6],[425,5],[430,4]]},
+        {n:'Barbell RDL',b:'195 lb',f:'Barbell RDL',fl:'185 lb',sets:4,reps:'8',_repThresholds:[[225,8],[265,7],[305,6],[345,5]]},
         {n:'Barbell good morning',b:'—',f:'Barbell good morning',fl:'95 lb',sets:3,reps:'10',_repCeiling:12},
         {n:'Cable leg curl',b:'70 lb',f:'Cable leg curl (ankle)',fl:'45 lb',sets:3,reps:'12',_repCeiling:20},
         {n:'Hip thrusts / KB swing',b:'BW × 32',f:'KB swing',fl:'60 lb × 24',sets:4,reps:'see loads'},
@@ -1069,7 +1069,7 @@ function isNonProgressing(name){
 }
 
 // Movement classification — primaries get tension priority, accessories get rep priority
-const PRIMARY_KEYWORDS = ['chest press','bench press','deadlift','squat','row','pulldown','pull-up','shoulder press','clean','push press','snatch'];
+const PRIMARY_KEYWORDS = ['chest press','bench press','deadlift','landmine deadlift','squat','row','pulldown','pull-up','shoulder press','clean','push press','snatch'];
 function isPrimaryMove(name){
   const n = name.toLowerCase();
   return PRIMARY_KEYWORDS.some(k => n.includes(k));
@@ -1189,8 +1189,15 @@ function generateLocalWeek(targetWeek, fromWeek, perf, notes, parsedSignals){
   // ODD/EVEN MOVEMENT SWAP — apply before progression
   base.forEach(day => {
     day.moves.forEach(m => {
-
-
+      if(m._track === 'odd-load-even-load-dl'){
+        if(isEvenWeek){
+          m.f = m._even; m.fl = m._evenfl; m.reps = m._evenreps;
+          m.n = 'Landmine deadlift'; m._currentTrack = 'even';
+        } else {
+          m.f = m._odd; m.fl = m._oddfl; m.reps = m._oddreps;
+          m.n = 'Hex bar deadlift'; m._currentTrack = 'odd';
+        }
+      }
     });
   });
 
@@ -1200,6 +1207,24 @@ function generateLocalWeek(targetWeek, fromWeek, perf, notes, parsedSignals){
 
       const isPrimary = isPrimaryMove(m.n);
       const action = decideAction(m.n, perf, notes, parsedSignals);
+
+      // DL rotation — both tracks progress load independently
+      if(m._track === 'odd-load-even-load-dl'){
+        if(m.fl) m.fl = progressLoadField(m.fl, true, action);
+        if(m._currentTrack === 'even') m._evenfl = m.fl;
+        else m._oddfl = m.fl;
+        // Apply rep threshold after load progress
+        if(m._repThresholds){
+          const loadNum = parseFloat(m.fl);
+          if(!isNaN(loadNum)){
+            const sorted = [...m._repThresholds].sort((a,b) => b[0]-a[0]);
+            for(const [threshold, targetReps] of sorted){
+              if(loadNum >= threshold){ m.reps = String(targetReps); break; }
+            }
+          }
+        }
+        return;
+      }
 
       // REP CEILING CHECK — if hit ceiling, bump load and reset reps
       if(m._repCeiling && m.reps && m.reps !== 'see loads' && !/yd|s$|sec/i.test(m.reps)){
@@ -1492,7 +1517,7 @@ function loadState(){
 }
 
 // INIT
-const BUILD_STAMP = '2025-08-16b';
+const BUILD_STAMP = '2025-08-17';
 loadState();
 var stampEl = document.getElementById('phase-label');
 if(stampEl) stampEl.textContent = 'BUILD ' + BUILD_STAMP;
@@ -1961,7 +1986,7 @@ function buildSystemPrompt(){
     'PROGRAM:\n' + progSummary + '\n\n' +
     'LOGS: ' + (recentLogs||'None') + '\n\n' +
     'RULES: 4-day U/L/U/L. Barbell bench (K6 cage). Hex bar DL. DB RDL permanent. RPE 8 max 4 sets. Deload wk 4.\n' +
-    'Bench: Barbell bench press every week, progress load only.\n' +
+    'LOWER A: Deadlift rotates odd/even — ODD=Hex bar DL, EVEN=Landmine DL (both progress load). Barbell RDL replaced DB RDL.\n' +
     'Lower B: Landmine thruster→Sled→Back squat→Landmine squat→Tri-set→Farmer carry(90s).\n' +
     'Week generation: use the Generate button on Program tab, not Coach.\n' +
     'Pickleball 4x/wk. Vegan athlete 185lb 49yo.';
