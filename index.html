@@ -75,6 +75,9 @@ html, body { height: 100%; overflow: hidden; background: var(--paper); color: va
 .load-b { color: var(--accent); font-family: var(--font-mono); font-size: 11px; }
 .load-f { color: #3b82f6; font-family: var(--font-mono); font-size: 11px; }
 .num-cell { text-align: center; font-family: var(--font-mono); font-size: 12px; }
+.edit-input { width: 100%; padding: 4px 6px; background: var(--surface); border: 1px solid var(--accent); border-radius: 5px; font-size: 12px; font-family: var(--font-mono); color: var(--ink); box-sizing: border-box; -webkit-appearance: none; }
+.edit-input:focus { outline: none; border-color: #3b82f6; }
+.edit-badge { display:inline-block;padding:2px 6px;background:var(--accent);color:white;font-size:9px;border-radius:4px;font-family:var(--font-mono);letter-spacing:0.05em;vertical-align:middle;margin-left:4px; }
 
 /* WARMUP */
 .warmup-strip { margin: 10px 16px 0; background: var(--surface); border-radius: var(--r); padding: 10px 12px; }
@@ -171,6 +174,7 @@ textarea { min-height: 80px; resize: vertical; }
       <div style="padding:8px 16px 0;display:flex;gap:8px;">
         <button class="btn btn-primary" style="flex:1;font-size:12px;" onclick="quickGenerate()">Generate Week <span id="gen-week-num"></span> ↗</button>
         <button class="btn btn-ghost" style="font-size:12px;" onclick="showGenOptions()">Options</button>
+        <button class="btn btn-ghost" id="edit-mode-btn" style="font-size:12px;" onclick="toggleEditMode()">Edit</button>
       </div>
       <div id="gen-quick-result" style="padding:0 16px;font-size:11.5px;color:var(--mid);font-family:var(--font-mono);"></div>
       <div class="warmup-strip"><div class="warmup-label">Warm-up</div><div class="warmup-text" id="prog-warmup"></div></div>
@@ -913,23 +917,72 @@ function renderProgChips(){
   const el=document.getElementById('prog-day-chips');
   el.innerHTML=ST.program.map((d,i)=>`<div class="day-chip${i===ST.progDay?' active':''}" onclick="setProgDay(${i})">${d.label.split('—')[0].trim()}</div>`).join('');
 }
-function setProgDay(i){ST.progDay=i;renderProgChips();renderProgDay(i);}
+function setProgDay(i){if(EDIT_MODE) saveEditModeChanges();ST.progDay=i;renderProgChips();renderProgDay(i);}
+let EDIT_MODE = false;
+
+function toggleEditMode(){
+  EDIT_MODE = !EDIT_MODE;
+  const btn = document.getElementById('edit-mode-btn');
+  if(EDIT_MODE){
+    btn.textContent = 'Lock ✓';
+    btn.classList.remove('btn-ghost');
+    btn.classList.add('btn-primary');
+  } else {
+    // Save all edits from current day
+    saveEditModeChanges();
+    btn.textContent = 'Edit';
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-ghost');
+  }
+  renderProgDay(ST.progDay);
+}
+
+function saveEditModeChanges(){
+  const day = ST.program[ST.progDay];
+  if(!day) return;
+  day.moves.forEach(function(m, mi){
+    const nameEl = document.getElementById('edit-n-' + mi);
+    const flEl = document.getElementById('edit-fl-' + mi);
+    const setsEl = document.getElementById('edit-sets-' + mi);
+    const repsEl = document.getElementById('edit-reps-' + mi);
+    if(nameEl) m.n = nameEl.value.trim() || m.n;
+    if(flEl) m.fl = flEl.value.trim();
+    if(setsEl) m.sets = parseInt(setsEl.value) || m.sets;
+    if(repsEl) m.reps = repsEl.value.trim() || m.reps;
+  });
+  saveState();
+}
+
 function capSets(s){ return Math.min(4, parseInt(s)||4); }
 
 function renderProgDay(i){
   const day=ST.program[i];
-  document.getElementById('prog-warmup').textContent=day.warmup;
-  let html='<thead><tr><th style="width:38%">Movement</th><th style="width:17%">Band</th><th style="width:18%">Free weight / Cable</th><th style="width:8%;text-align:center">Sets</th><th style="width:19%;text-align:center">Reps</th></tr></thead><tbody>';
-  let lastSec=null;
-  day.moves.forEach(m=>{
-    if(m.sec!==lastSec){if(m.sec)html+=`<tr class="sec-row"><td colspan="5">${m.sec}</td></tr>`;lastSec=m.sec||null;}
-    const bc=m.b&&m.b!=='—'?`<span class="load-b">${m.b}</span>`:'<span style="color:var(--mid)">—</span>';
-    let fc='';
-    if(m.f&&m.f!=='—')fc+=`<span style="font-size:12px">${m.f}</span>`;
-    if(m.fl)fc+=`${m.f&&m.f!=='—'?'<br>':''}<span class="load-f">${m.fl}</span>`;
-    if(!fc)fc='<span style="color:var(--mid)">—</span>';
-    html+=`<tr><td><div class="ex-name">${m.n}</div></td><td>${bc}</td><td>${fc}</td><td class="num-cell">${capSets(m.sets)}</td><td class="num-cell">${m.reps}</td></tr>`;
-  });
+  document.getElementById('prog-warmup').textContent=day.warmup||'';
+  let html;
+  if(EDIT_MODE){
+    html='<thead><tr><th style="width:40%">Movement <span class="edit-badge">EDIT</span></th><th style="width:22%">Load / Cable</th><th style="width:9%;text-align:center">Sets</th><th style="width:19%;text-align:center">Reps</th></tr></thead><tbody>';
+    let lastSec=null;
+    day.moves.forEach(function(m,mi){
+      if(m.sec!==lastSec){if(m.sec)html+=`<tr class="sec-row"><td colspan="4">${m.sec}</td></tr>`;lastSec=m.sec||null;}
+      html+=`<tr>
+        <td><input class="edit-input" id="edit-n-${mi}" value="${m.n.replace(/"/g,'&quot;')}" placeholder="Movement name"></td>
+        <td><input class="edit-input" id="edit-fl-${mi}" value="${m.fl||''}" placeholder="e.g. 135 lb"></td>
+        <td class="num-cell"><input class="edit-input" id="edit-sets-${mi}" type="number" min="1" max="6" value="${capSets(m.sets)}" style="width:44px;text-align:center;"></td>
+        <td class="num-cell"><input class="edit-input" id="edit-reps-${mi}" value="${m.reps||''}" placeholder="reps"></td>
+      </tr>`;
+    });
+  } else {
+    html='<thead><tr><th style="width:45%">Movement</th><th style="width:25%">Load / Cable</th><th style="width:10%;text-align:center">Sets</th><th style="width:20%;text-align:center">Reps</th></tr></thead><tbody>';
+    let lastSec=null;
+    day.moves.forEach(function(m){
+      if(m.sec!==lastSec){if(m.sec)html+=`<tr class="sec-row"><td colspan="4">${m.sec}</td></tr>`;lastSec=m.sec||null;}
+      let fc='';
+      if(m.f&&m.f!=='—')fc+=`<span style="font-size:11px;color:var(--mid)">${m.f}</span>`;
+      if(m.fl)fc+=`${m.f&&m.f!=='—'?'<br>':''}<span class="load-f">${m.fl}</span>`;
+      if(!fc)fc='<span style="color:var(--mid)">—</span>';
+      html+=`<tr><td><div class="ex-name">${m.n}</div></td><td>${fc}</td><td class="num-cell">${capSets(m.sets)}</td><td class="num-cell">${m.reps}</td></tr>`;
+    });
+  }
   html+='</tbody>';
   document.getElementById('prog-table').innerHTML=html;
 }
@@ -1517,7 +1570,7 @@ function loadState(){
 }
 
 // INIT
-const BUILD_STAMP = '2025-08-17';
+const BUILD_STAMP = '2025-08-18';
 loadState();
 var stampEl = document.getElementById('phase-label');
 if(stampEl) stampEl.textContent = 'BUILD ' + BUILD_STAMP;
