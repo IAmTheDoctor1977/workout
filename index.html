@@ -327,6 +327,7 @@ textarea { min-height: 80px; resize: vertical; }
           <div style="display:flex;gap:6px;">
             <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="prevBWDay()">‹</button>
             <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="nextBWDay()">›</button>
+            <button class="btn btn-ghost" id="bw-edit-btn" style="padding:4px 10px;font-size:11px;" onclick="toggleBWEditMode()">Edit</button>
           </div>
         </div>
         <div class="card" id="bw-display"></div>
@@ -960,31 +961,49 @@ function renderProgDay(i){
   document.getElementById('prog-warmup').textContent=day.warmup||'';
   let html;
   if(EDIT_MODE){
-    html='<thead><tr><th style="width:40%">Movement <span class="edit-badge">EDIT</span></th><th style="width:22%">Load / Cable</th><th style="width:9%;text-align:center">Sets</th><th style="width:19%;text-align:center">Reps</th></tr></thead><tbody>';
+    html='<thead><tr><th style="width:38%">Movement <span class="edit-badge">EDIT</span></th><th style="width:22%">Load</th><th style="width:9%;text-align:center">Sets</th><th style="width:16%;text-align:center">Reps</th><th style="width:7%;text-align:center"></th></tr></thead><tbody>';
     let lastSec=null;
     day.moves.forEach(function(m,mi){
-      if(m.sec!==lastSec){if(m.sec)html+=`<tr class="sec-row"><td colspan="4">${m.sec}</td></tr>`;lastSec=m.sec||null;}
+      if(m.sec!==lastSec){if(m.sec)html+=`<tr class="sec-row"><td colspan="5">${m.sec}</td></tr>`;lastSec=m.sec||null;}
       html+=`<tr>
-        <td><input class="edit-input" id="edit-n-${mi}" value="${m.n.replace(/"/g,'&quot;')}" placeholder="Movement name"></td>
+        <td><input class="edit-input" id="edit-n-${mi}" value="${(m.n||'').replace(/"/g,'&quot;')}" placeholder="Movement name"></td>
         <td><input class="edit-input" id="edit-fl-${mi}" value="${m.fl||''}" placeholder="e.g. 135 lb"></td>
-        <td class="num-cell"><input class="edit-input" id="edit-sets-${mi}" type="number" min="1" max="6" value="${capSets(m.sets)}" style="width:44px;text-align:center;"></td>
+        <td class="num-cell"><input class="edit-input" id="edit-sets-${mi}" type="number" min="1" max="6" value="${capSets(m.sets)}" style="width:40px;text-align:center;"></td>
         <td class="num-cell"><input class="edit-input" id="edit-reps-${mi}" value="${m.reps||''}" placeholder="reps"></td>
+        <td style="text-align:center;"><button onclick="deleteProgMove(${mi})" style="background:none;border:none;color:#e55;font-size:16px;cursor:pointer;padding:0 4px;">×</button></td>
       </tr>`;
     });
+    html+=`</tbody><tfoot><tr><td colspan="5" style="padding:8px;">
+      <button onclick="addProgMove()" style="width:100%;padding:7px;background:var(--surface);border:1px dashed var(--rule);border-radius:7px;color:var(--mid);font-size:12px;cursor:pointer;">+ Add movement</button>
+    </td></tr></tfoot>`;
   } else {
-    html='<thead><tr><th style="width:45%">Movement</th><th style="width:25%">Load / Cable</th><th style="width:10%;text-align:center">Sets</th><th style="width:20%;text-align:center">Reps</th></tr></thead><tbody>';
+    html='<thead><tr><th style="width:50%">Movement</th><th style="width:20%">Load</th><th style="width:10%;text-align:center">Sets</th><th style="width:20%;text-align:center">Reps</th></tr></thead><tbody>';
     let lastSec=null;
     day.moves.forEach(function(m){
       if(m.sec!==lastSec){if(m.sec)html+=`<tr class="sec-row"><td colspan="4">${m.sec}</td></tr>`;lastSec=m.sec||null;}
-      let fc='';
-      if(m.f&&m.f!=='—')fc+=`<span style="font-size:11px;color:var(--mid)">${m.f}</span>`;
-      if(m.fl)fc+=`${m.f&&m.f!=='—'?'<br>':''}<span class="load-f">${m.fl}</span>`;
-      if(!fc)fc='<span style="color:var(--mid)">—</span>';
-      html+=`<tr><td><div class="ex-name">${m.n}</div></td><td>${fc}</td><td class="num-cell">${capSets(m.sets)}</td><td class="num-cell">${m.reps}</td></tr>`;
+      const load=m.fl?`<span class="load-f">${m.fl}</span>`:'<span style="color:var(--mid)">—</span>';
+      html+=`<tr><td><div class="ex-name">${m.n}</div></td><td>${load}</td><td class="num-cell">${capSets(m.sets)}</td><td class="num-cell">${m.reps}</td></tr>`;
     });
+    html+='</tbody>';
   }
-  html+='</tbody>';
   document.getElementById('prog-table').innerHTML=html;
+}
+
+function deleteProgMove(mi){
+  saveEditModeChanges();
+  ST.program[ST.progDay].moves.splice(mi,1);
+  saveState();
+  renderProgDay(ST.progDay);
+}
+
+function addProgMove(){
+  saveEditModeChanges();
+  ST.program[ST.progDay].moves.push({n:'New movement',fl:'',sets:3,reps:'10',b:'—',f:''});
+  saveState();
+  renderProgDay(ST.progDay);
+  // Scroll to bottom
+  const table = document.getElementById('prog-table');
+  if(table) table.scrollIntoView({behavior:'smooth',block:'end'});
 }
 
 // LOG
@@ -1570,7 +1589,7 @@ function loadState(){
 }
 
 // INIT
-const BUILD_STAMP = '2025-08-18';
+const BUILD_STAMP = '2025-08-19';
 loadState();
 var stampEl = document.getElementById('phase-label');
 if(stampEl) stampEl.textContent = 'BUILD ' + BUILD_STAMP;
@@ -1881,21 +1900,88 @@ function loadStretch(type){
 }
 
 // BODYWEIGHT
+let BW_EDIT_MODE = false;
+
+function toggleBWEditMode(){
+  BW_EDIT_MODE = !BW_EDIT_MODE;
+  const btn = document.getElementById('bw-edit-btn');
+  if(BW_EDIT_MODE){
+    btn.textContent = 'Lock ✓'; btn.classList.remove('btn-ghost'); btn.classList.add('btn-primary');
+  } else {
+    saveBWEditChanges();
+    btn.textContent = 'Edit'; btn.classList.remove('btn-primary'); btn.classList.add('btn-ghost');
+  }
+  renderBWDay();
+}
+
+function saveBWEditChanges(){
+  const day = TV_ST.bwDays[TV_ST.bwDayIdx];
+  if(!day) return;
+  day.exercises.forEach(function(e,ei){
+    const nEl=document.getElementById('bw-edit-n-'+ei);
+    const sEl=document.getElementById('bw-edit-sets-'+ei);
+    const rEl=document.getElementById('bw-edit-reps-'+ei);
+    const cEl=document.getElementById('bw-edit-cue-'+ei);
+    if(nEl) e.n=nEl.value.trim()||e.n;
+    if(sEl) e.sets=parseInt(sEl.value)||e.sets;
+    if(rEl) e.reps=rEl.value.trim()||e.reps;
+    if(cEl) e.cue=cEl.value.trim();
+  });
+  saveTVState();
+}
+
 function renderBWDay(){
   const day = TV_ST.bwDays[TV_ST.bwDayIdx];
   document.getElementById('bw-week-num').textContent = TV_ST.bwWeek;
   document.getElementById('bw-day-num').textContent = TV_ST.bwDayIdx+1;
   let html = `<div class="card-title">${day.label} <span style="font-size:11px;color:var(--mid);font-weight:400;">· ${day.focus}</span></div>`;
-  html += `<table class="prog-table"><thead><tr><th style="width:30%">Exercise</th><th style="width:10%;text-align:center">Sets</th><th style="width:15%;text-align:center">Reps</th><th>Cue</th></tr></thead><tbody>`;
-  day.exercises.forEach(e=>{
-    html += `<tr><td><div class="ex-name">${e.n}</div></td><td class="num-cell">${e.sets}</td><td class="num-cell">${e.reps}</td><td><div style="font-size:11.5px;color:var(--mid);font-style:italic;">${e.cue}</div></td></tr>`;
-  });
-  html += `</tbody></table>`;
+  if(BW_EDIT_MODE){
+    html += `<table class="prog-table"><thead><tr><th style="width:28%">Exercise <span class="edit-badge">EDIT</span></th><th style="width:8%;text-align:center">Sets</th><th style="width:12%;text-align:center">Reps</th><th>Cue</th><th style="width:6%"></th></tr></thead><tbody>`;
+    day.exercises.forEach(function(e,ei){
+      html += `<tr>
+        <td><input class="edit-input" id="bw-edit-n-${ei}" value="${(e.n||'').replace(/"/g,'&quot;')}" placeholder="Exercise"></td>
+        <td class="num-cell"><input class="edit-input" id="bw-edit-sets-${ei}" type="number" min="1" max="6" value="${e.sets}" style="width:38px;text-align:center;"></td>
+        <td class="num-cell"><input class="edit-input" id="bw-edit-reps-${ei}" value="${e.reps||''}" placeholder="reps"></td>
+        <td><input class="edit-input" id="bw-edit-cue-${ei}" value="${(e.cue||'').replace(/"/g,'&quot;')}" placeholder="Coaching cue"></td>
+        <td style="text-align:center;"><button onclick="deleteBWMove(${ei})" style="background:none;border:none;color:#e55;font-size:16px;cursor:pointer;padding:0 4px;">×</button></td>
+      </tr>`;
+    });
+    html += `</tbody><tfoot><tr><td colspan="5" style="padding:8px;">
+      <button onclick="addBWMove()" style="width:100%;padding:7px;background:var(--surface);border:1px dashed var(--rule);border-radius:7px;color:var(--mid);font-size:12px;cursor:pointer;">+ Add exercise</button>
+    </td></tr></tfoot>`;
+  } else {
+    html += `<table class="prog-table"><thead><tr><th style="width:30%">Exercise</th><th style="width:10%;text-align:center">Sets</th><th style="width:15%;text-align:center">Reps</th><th>Cue</th></tr></thead><tbody>`;
+    day.exercises.forEach(function(e){
+      html += `<tr><td><div class="ex-name">${e.n}</div></td><td class="num-cell">${e.sets}</td><td class="num-cell">${e.reps}</td><td><div style="font-size:11.5px;color:var(--mid);font-style:italic;">${e.cue}</div></td></tr>`;
+    });
+    html += `</tbody>`;
+  }
+  html += `</table>`;
   document.getElementById('bw-display').innerHTML = html;
 }
 
-function nextBWDay(){ TV_ST.bwDayIdx=(TV_ST.bwDayIdx+1)%4; saveTVState(); renderBWDay(); }
-function prevBWDay(){ TV_ST.bwDayIdx=(TV_ST.bwDayIdx+3)%4; saveTVState(); renderBWDay(); }
+function deleteBWMove(ei){
+  saveBWEditChanges();
+  TV_ST.bwDays[TV_ST.bwDayIdx].exercises.splice(ei,1);
+  saveTVState();
+  renderBWDay();
+}
+
+function addBWMove(){
+  saveBWEditChanges();
+  TV_ST.bwDays[TV_ST.bwDayIdx].exercises.push({n:'New exercise',sets:3,reps:'10',cue:'Add coaching cue.'});
+  saveTVState();
+  renderBWDay();
+}
+
+function nextBWDay(){
+  if(BW_EDIT_MODE) saveBWEditChanges();
+  TV_ST.bwDayIdx=(TV_ST.bwDayIdx+1)%4; saveTVState(); renderBWDay();
+}
+function prevBWDay(){
+  if(BW_EDIT_MODE) saveBWEditChanges();
+  TV_ST.bwDayIdx=(TV_ST.bwDayIdx+3)%4; saveTVState(); renderBWDay();
+}
 
 function logBWSession(){
   const entry = { week: TV_ST.bwWeek, day: TV_ST.bwDayIdx+1, label: TV_ST.bwDays[TV_ST.bwDayIdx].label, date: new Date().toLocaleDateString() };
@@ -2437,6 +2523,47 @@ function loadChicasState(){
   }
 }
 
+let CHICAS_EDIT_MODE = false;
+
+function toggleChicasEditMode(){
+  CHICAS_EDIT_MODE = !CHICAS_EDIT_MODE;
+  if(!CHICAS_EDIT_MODE) saveChicasEditChanges();
+  renderChicas();
+}
+
+function saveChicasEditChanges(){
+  const girl = getGirl();
+  const day = CHICAS_PROGRAM.days[girl.dayIdx];
+  day.exercises.forEach(function(ex,ei){
+    const nEl=document.getElementById('chicas-edit-n-'+ei);
+    const sEl=document.getElementById('chicas-edit-sets-'+ei);
+    const rEl=document.getElementById('chicas-edit-reps-'+ei);
+    const lEl=document.getElementById('chicas-edit-load-'+ei);
+    if(nEl && nEl.value.trim()) ex.n = nEl.value.trim();
+    if(!girl.exercises[ex.n]) girl.exercises[ex.n]={};
+    if(sEl) girl.exercises[ex.n].sets = parseInt(sEl.value)||ex.sets;
+    if(rEl) girl.exercises[ex.n].reps = rEl.value.trim()||ex.reps;
+    if(lEl) girl.exercises[ex.n].load = lEl.value.trim()||ex.load;
+  });
+  saveChicasState();
+}
+
+function deleteChicasMove(ei){
+  saveChicasEditChanges();
+  const day = CHICAS_PROGRAM.days[getGirl().dayIdx];
+  day.exercises.splice(ei,1);
+  saveChicasState();
+  renderChicas();
+}
+
+function addChicasMove(){
+  saveChicasEditChanges();
+  const day = CHICAS_PROGRAM.days[getGirl().dayIdx];
+  day.exercises.push({n:'New exercise',sets:2,reps:'8',load:'BW',feel:'Feel your muscles working.',action:'Move slow and controlled.'});
+  saveChicasState();
+  renderChicas();
+}
+
 function saveChicasState(){
   try{ localStorage.setItem('wt_chicas', JSON.stringify(CHICAS_ST)); }catch(e){}
 }
@@ -2496,32 +2623,47 @@ function renderChicas(){
   html += '</tbody></table></div>';
 
   // Workout
-  html += '<div class="section-divider">Workout · '+day.label+'</div>';
-  html += '<div class="card" style="padding:0;overflow:hidden;"><table class="prog-table"><thead><tr><th style="width:32%">Exercise</th><th style="width:12%;text-align:center">Sets</th><th style="width:12%;text-align:center">Reps</th><th style="width:14%">Load</th><th>Cues</th></tr></thead><tbody>';
+  html += '<div class="section-divider" style="display:flex;justify-content:space-between;align-items:center;"><span>Workout · '+day.label+'</span><button id="chicas-edit-btn" class="btn btn-ghost" style="padding:3px 10px;font-size:11px;" onclick="toggleChicasEditMode()">'+( CHICAS_EDIT_MODE ? 'Lock ✓' : 'Edit')+'</button></div>';
 
-  let lastSec = null;
-  day.exercises.forEach(function(ex){
-    const sec = ex.sec||null;
-    if(sec !== lastSec){
-      if(sec) html += '<tr class="sec-row"><td colspan="5">'+sec+'</td></tr>';
-      lastSec = sec;
-    }
-    // Check if this girl has a custom progression for this exercise
-    const prog = girl.exercises[ex.n];
-    const sets = prog ? prog.sets : ex.sets;
-    const reps = prog ? prog.reps : ex.reps;
-    const load = prog ? prog.load : ex.load;
-    const formOk = prog && prog.formSessions >= 2;
-    const readyBadge = formOk ? '<span class="badge b-new" style="margin-left:4px;">ready to progress</span>' : '';
-
-    html += '<tr><td><div class="ex-name">'+ex.n+'</div>'+readyBadge+'</td>';
-    html += '<td class="num-cell">'+sets+'</td>';
-    html += '<td class="num-cell">'+reps+'</td>';
-    html += '<td><span style="font-size:11px;color:var(--accent);font-family:var(--font-mono);">'+load+'</span></td>';
-    html += '<td><div style="font-size:11px;color:var(--mid);font-style:italic;">'+ex.feel+'</div><div style="font-size:11.5px;color:var(--ink);margin-top:3px;font-weight:500;">'+ex.action+'</div></td>';
-    html += '</tr>';
-  });
-  html += '</tbody></table></div>';
+  if(CHICAS_EDIT_MODE){
+    html += '<div class="card" style="padding:0;overflow:hidden;"><table class="prog-table"><thead><tr><th style="width:30%">Exercise <span class="edit-badge">EDIT</span></th><th style="width:10%;text-align:center">Sets</th><th style="width:12%;text-align:center">Reps</th><th style="width:14%">Load</th><th style="width:6%"></th></tr></thead><tbody>';
+    day.exercises.forEach(function(ex,ei){
+      const prog = girl.exercises[ex.n]||{};
+      html += `<tr>
+        <td><input class="edit-input" id="chicas-edit-n-${ei}" value="${(ex.n||'').replace(/"/g,'&quot;')}" placeholder="Exercise"></td>
+        <td class="num-cell"><input class="edit-input" id="chicas-edit-sets-${ei}" type="number" min="1" max="6" value="${prog.sets||ex.sets}" style="width:38px;text-align:center;"></td>
+        <td class="num-cell"><input class="edit-input" id="chicas-edit-reps-${ei}" value="${prog.reps||ex.reps||''}" placeholder="reps"></td>
+        <td><input class="edit-input" id="chicas-edit-load-${ei}" value="${prog.load||ex.load||''}" placeholder="load"></td>
+        <td style="text-align:center;"><button onclick="deleteChicasMove(${ei})" style="background:none;border:none;color:#e55;font-size:16px;cursor:pointer;padding:0 4px;">×</button></td>
+      </tr>`;
+    });
+    html += `</tbody><tfoot><tr><td colspan="5" style="padding:8px;">
+      <button onclick="addChicasMove()" style="width:100%;padding:7px;background:var(--surface);border:1px dashed var(--rule);border-radius:7px;color:var(--mid);font-size:12px;cursor:pointer;">+ Add exercise</button>
+    </td></tr></tfoot></table></div>`;
+  } else {
+    html += '<div class="card" style="padding:0;overflow:hidden;"><table class="prog-table"><thead><tr><th style="width:32%">Exercise</th><th style="width:12%;text-align:center">Sets</th><th style="width:12%;text-align:center">Reps</th><th style="width:14%">Load</th><th>Cues</th></tr></thead><tbody>';
+    let lastSec = null;
+    day.exercises.forEach(function(ex){
+      const sec = ex.sec||null;
+      if(sec !== lastSec){
+        if(sec) html += '<tr class="sec-row"><td colspan="5">'+sec+'</td></tr>';
+        lastSec = sec;
+      }
+      const prog = girl.exercises[ex.n];
+      const sets = prog ? prog.sets : ex.sets;
+      const reps = prog ? prog.reps : ex.reps;
+      const load = prog ? prog.load : ex.load;
+      const formOk = prog && prog.formSessions >= 2;
+      const readyBadge = formOk ? '<span class="badge b-new" style="margin-left:4px;">ready to progress</span>' : '';
+      html += '<tr><td><div class="ex-name">'+ex.n+'</div>'+readyBadge+'</td>';
+      html += '<td class="num-cell">'+sets+'</td>';
+      html += '<td class="num-cell">'+reps+'</td>';
+      html += '<td><span style="font-size:11px;color:var(--accent);font-family:var(--font-mono);">'+load+'</span></td>';
+      html += '<td><div style="font-size:11px;color:var(--mid);font-style:italic;">'+ex.feel+'</div><div style="font-size:11.5px;color:var(--ink);margin-top:3px;font-weight:500;">'+ex.action+'</div></td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+  }
 
   // Session controls
   html += '<div style="padding:10px 16px;display:flex;gap:8px;">';
