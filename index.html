@@ -78,6 +78,9 @@ html, body { height: 100%; overflow: hidden; background: var(--paper); color: va
 .edit-input { width: 100%; padding: 4px 6px; background: var(--surface); border: 1px solid var(--accent); border-radius: 5px; font-size: 12px; font-family: var(--font-mono); color: var(--ink); box-sizing: border-box; -webkit-appearance: none; }
 .edit-input:focus { outline: none; border-color: #3b82f6; }
 .edit-badge { display:inline-block;padding:2px 6px;background:var(--accent);color:white;font-size:9px;border-radius:4px;font-family:var(--font-mono);letter-spacing:0.05em;vertical-align:middle;margin-left:4px; }
+.drag-handle { cursor:grab; color:var(--mid); font-size:16px; padding:0 6px; user-select:none; touch-action:none; }
+.drag-handle:active { cursor:grabbing; }
+.drag-over { background: rgba(200,64,26,0.12) !important; outline: 2px dashed var(--accent); }
 
 /* WARMUP */
 .warmup-strip { margin: 10px 16px 0; background: var(--surface); border-radius: var(--r); padding: 10px 12px; }
@@ -961,11 +964,12 @@ function renderProgDay(i){
   document.getElementById('prog-warmup').textContent=day.warmup||'';
   let html;
   if(EDIT_MODE){
-    html='<thead><tr><th style="width:38%">Movement <span class="edit-badge">EDIT</span></th><th style="width:22%">Load</th><th style="width:9%;text-align:center">Sets</th><th style="width:16%;text-align:center">Reps</th><th style="width:7%;text-align:center"></th></tr></thead><tbody>';
+    html='<thead><tr><th style="width:4%"></th><th style="width:36%">Movement <span class="edit-badge">EDIT</span></th><th style="width:22%">Load</th><th style="width:9%;text-align:center">Sets</th><th style="width:16%;text-align:center">Reps</th><th style="width:7%;text-align:center"></th></tr></thead><tbody>';
     let lastSec=null;
     day.moves.forEach(function(m,mi){
-      if(m.sec!==lastSec){if(m.sec)html+=`<tr class="sec-row"><td colspan="5">${m.sec}</td></tr>`;lastSec=m.sec||null;}
-      html+=`<tr>
+      if(m.sec!==lastSec){if(m.sec)html+=`<tr class="sec-row"><td colspan="6">${m.sec}</td></tr>`;lastSec=m.sec||null;}
+      html+=`<tr data-idx="${mi}">
+        <td><span class="drag-handle">⠿</span></td>
         <td><input class="edit-input" id="edit-n-${mi}" value="${(m.n||'').replace(/"/g,'&quot;')}" placeholder="Movement name"></td>
         <td><input class="edit-input" id="edit-fl-${mi}" value="${m.fl||''}" placeholder="e.g. 135 lb"></td>
         <td class="num-cell"><input class="edit-input" id="edit-sets-${mi}" type="number" min="1" max="6" value="${capSets(m.sets)}" style="width:40px;text-align:center;"></td>
@@ -973,7 +977,7 @@ function renderProgDay(i){
         <td style="text-align:center;"><button onclick="deleteProgMove(${mi})" style="background:none;border:none;color:#e55;font-size:16px;cursor:pointer;padding:0 4px;">×</button></td>
       </tr>`;
     });
-    html+=`</tbody><tfoot><tr><td colspan="5" style="padding:8px;">
+    html+=`</tbody><tfoot><tr><td colspan="6" style="padding:8px;">
       <button onclick="addProgMove()" style="width:100%;padding:7px;background:var(--surface);border:1px dashed var(--rule);border-radius:7px;color:var(--mid);font-size:12px;cursor:pointer;">+ Add movement</button>
     </td></tr></tfoot>`;
   } else {
@@ -987,6 +991,10 @@ function renderProgDay(i){
     html+='</tbody>';
   }
   document.getElementById('prog-table').innerHTML=html;
+  if(EDIT_MODE){
+    const tbody = document.querySelector('#prog-table tbody');
+    if(tbody) attachDragHandlers(tbody, 'prog');
+  }
 }
 
 function deleteProgMove(mi){
@@ -1589,7 +1597,7 @@ function loadState(){
 }
 
 // INIT
-const BUILD_STAMP = '2025-08-19';
+const BUILD_STAMP = '2025-08-20';
 loadState();
 var stampEl = document.getElementById('phase-label');
 if(stampEl) stampEl.textContent = 'BUILD ' + BUILD_STAMP;
@@ -1670,8 +1678,109 @@ renderRandChips();
 renderRandDay();
 
 // ============================================================
-// TV SESSION — CORE, STRETCH, BODYWEIGHT
+// DRAG-AND-DROP REORDER (touch + mouse)
 // ============================================================
+var _dragSrc = null;
+var _dragTarget = null;
+var _dragCtx = null; // 'prog' | 'bw' | 'chicas'
+
+function initDragRow(row, idx, ctx){
+  row.setAttribute('draggable', 'true');
+  row.dataset.idx = idx;
+
+  row.addEventListener('dragstart', function(e){
+    _dragSrc = idx; _dragCtx = ctx;
+    e.dataTransfer.effectAllowed = 'move';
+    row.style.opacity = '0.5';
+  });
+  row.addEventListener('dragend', function(){
+    row.style.opacity = '1';
+    document.querySelectorAll('.drag-over').forEach(function(el){ el.classList.remove('drag-over'); });
+  });
+  row.addEventListener('dragover', function(e){
+    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+    row.classList.add('drag-over');
+  });
+  row.addEventListener('dragleave', function(){ row.classList.remove('drag-over'); });
+  row.addEventListener('drop', function(e){
+    e.preventDefault();
+    row.classList.remove('drag-over');
+    const dest = parseInt(row.dataset.idx);
+    if(_dragSrc === null || _dragSrc === dest || _dragCtx !== ctx) return;
+    if(ctx === 'prog') reorderProgMoves(_dragSrc, dest);
+    else if(ctx === 'bw') reorderBWMoves(_dragSrc, dest);
+    else if(ctx === 'chicas') reorderChicasMoves(_dragSrc, dest);
+    _dragSrc = null; _dragCtx = null;
+  });
+
+  // Touch support
+  const handle = row.querySelector('.drag-handle');
+  if(!handle) return;
+  let touchStartY = 0, touchMoveY = 0;
+  handle.addEventListener('touchstart', function(e){
+    _dragSrc = idx; _dragCtx = ctx;
+    touchStartY = e.touches[0].clientY;
+    row.style.background = 'rgba(200,64,26,0.08)';
+  }, {passive:true});
+  handle.addEventListener('touchmove', function(e){
+    touchMoveY = e.touches[0].clientY;
+    const allRows = row.closest('tbody').querySelectorAll('tr[data-idx]');
+    allRows.forEach(function(r){ r.classList.remove('drag-over'); });
+    const over = document.elementFromPoint(e.touches[0].clientX, touchMoveY);
+    const overRow = over && over.closest('tr[data-idx]');
+    if(overRow && overRow !== row) overRow.classList.add('drag-over');
+  }, {passive:true});
+  handle.addEventListener('touchend', function(e){
+    row.style.background = '';
+    document.querySelectorAll('.drag-over').forEach(function(el){ el.classList.remove('drag-over'); });
+    const over = document.elementFromPoint(e.changedTouches[0].clientX, touchMoveY||touchStartY);
+    const overRow = over && over.closest('tr[data-idx]');
+    if(overRow){
+      const dest = parseInt(overRow.dataset.idx);
+      if(_dragSrc !== null && _dragSrc !== dest && _dragCtx === ctx){
+        if(ctx === 'prog') reorderProgMoves(_dragSrc, dest);
+        else if(ctx === 'bw') reorderBWMoves(_dragSrc, dest);
+        else if(ctx === 'chicas') reorderChicasMoves(_dragSrc, dest);
+      }
+    }
+    _dragSrc = null; _dragCtx = null;
+  });
+}
+
+function reorderProgMoves(from, to){
+  saveEditModeChanges();
+  const moves = ST.program[ST.progDay].moves;
+  const item = moves.splice(from, 1)[0];
+  moves.splice(to, 0, item);
+  saveState();
+  renderProgDay(ST.progDay);
+}
+
+function reorderBWMoves(from, to){
+  saveBWEditChanges();
+  const exs = TV_ST.bwDays[TV_ST.bwDayIdx].exercises;
+  const item = exs.splice(from, 1)[0];
+  exs.splice(to, 0, item);
+  saveTVState();
+  renderBWDay();
+}
+
+function reorderChicasMoves(from, to){
+  saveChicasEditChanges();
+  const day = CHICAS_PROGRAM.days[getGirl().dayIdx];
+  const item = day.exercises.splice(from, 1)[0];
+  day.exercises.splice(to, 0, item);
+  saveChicasState();
+  renderChicas();
+}
+
+function attachDragHandlers(tbody, ctx){
+  tbody.querySelectorAll('tr[data-idx]').forEach(function(row){
+    initDragRow(row, parseInt(row.dataset.idx), ctx);
+  });
+}
+
+
 
 // CORE DATA
 const CORE_DAYS = [
@@ -1936,9 +2045,10 @@ function renderBWDay(){
   document.getElementById('bw-day-num').textContent = TV_ST.bwDayIdx+1;
   let html = `<div class="card-title">${day.label} <span style="font-size:11px;color:var(--mid);font-weight:400;">· ${day.focus}</span></div>`;
   if(BW_EDIT_MODE){
-    html += `<table class="prog-table"><thead><tr><th style="width:28%">Exercise <span class="edit-badge">EDIT</span></th><th style="width:8%;text-align:center">Sets</th><th style="width:12%;text-align:center">Reps</th><th>Cue</th><th style="width:6%"></th></tr></thead><tbody>`;
+    html += `<table class="prog-table"><thead><tr><th style="width:4%"></th><th style="width:26%">Exercise <span class="edit-badge">EDIT</span></th><th style="width:8%;text-align:center">Sets</th><th style="width:12%;text-align:center">Reps</th><th>Cue</th><th style="width:6%"></th></tr></thead><tbody>`;
     day.exercises.forEach(function(e,ei){
-      html += `<tr>
+      html += `<tr data-idx="${ei}">
+        <td><span class="drag-handle">⠿</span></td>
         <td><input class="edit-input" id="bw-edit-n-${ei}" value="${(e.n||'').replace(/"/g,'&quot;')}" placeholder="Exercise"></td>
         <td class="num-cell"><input class="edit-input" id="bw-edit-sets-${ei}" type="number" min="1" max="6" value="${e.sets}" style="width:38px;text-align:center;"></td>
         <td class="num-cell"><input class="edit-input" id="bw-edit-reps-${ei}" value="${e.reps||''}" placeholder="reps"></td>
@@ -1946,7 +2056,7 @@ function renderBWDay(){
         <td style="text-align:center;"><button onclick="deleteBWMove(${ei})" style="background:none;border:none;color:#e55;font-size:16px;cursor:pointer;padding:0 4px;">×</button></td>
       </tr>`;
     });
-    html += `</tbody><tfoot><tr><td colspan="5" style="padding:8px;">
+    html += `</tbody><tfoot><tr><td colspan="6" style="padding:8px;">
       <button onclick="addBWMove()" style="width:100%;padding:7px;background:var(--surface);border:1px dashed var(--rule);border-radius:7px;color:var(--mid);font-size:12px;cursor:pointer;">+ Add exercise</button>
     </td></tr></tfoot>`;
   } else {
@@ -1958,6 +2068,10 @@ function renderBWDay(){
   }
   html += `</table>`;
   document.getElementById('bw-display').innerHTML = html;
+  if(BW_EDIT_MODE){
+    const tbody = document.querySelector('#bw-display tbody');
+    if(tbody) attachDragHandlers(tbody, 'bw');
+  }
 }
 
 function deleteBWMove(ei){
@@ -2626,10 +2740,11 @@ function renderChicas(){
   html += '<div class="section-divider" style="display:flex;justify-content:space-between;align-items:center;"><span>Workout · '+day.label+'</span><button id="chicas-edit-btn" class="btn btn-ghost" style="padding:3px 10px;font-size:11px;" onclick="toggleChicasEditMode()">'+( CHICAS_EDIT_MODE ? 'Lock ✓' : 'Edit')+'</button></div>';
 
   if(CHICAS_EDIT_MODE){
-    html += '<div class="card" style="padding:0;overflow:hidden;"><table class="prog-table"><thead><tr><th style="width:30%">Exercise <span class="edit-badge">EDIT</span></th><th style="width:10%;text-align:center">Sets</th><th style="width:12%;text-align:center">Reps</th><th style="width:14%">Load</th><th style="width:6%"></th></tr></thead><tbody>';
+    html += '<div class="card" style="padding:0;overflow:hidden;"><table class="prog-table" id="chicas-edit-table"><thead><tr><th style="width:4%"></th><th style="width:28%">Exercise <span class="edit-badge">EDIT</span></th><th style="width:10%;text-align:center">Sets</th><th style="width:12%;text-align:center">Reps</th><th style="width:14%">Load</th><th style="width:6%"></th></tr></thead><tbody>';
     day.exercises.forEach(function(ex,ei){
       const prog = girl.exercises[ex.n]||{};
-      html += `<tr>
+      html += `<tr data-idx="${ei}">
+        <td><span class="drag-handle">⠿</span></td>
         <td><input class="edit-input" id="chicas-edit-n-${ei}" value="${(ex.n||'').replace(/"/g,'&quot;')}" placeholder="Exercise"></td>
         <td class="num-cell"><input class="edit-input" id="chicas-edit-sets-${ei}" type="number" min="1" max="6" value="${prog.sets||ex.sets}" style="width:38px;text-align:center;"></td>
         <td class="num-cell"><input class="edit-input" id="chicas-edit-reps-${ei}" value="${prog.reps||ex.reps||''}" placeholder="reps"></td>
@@ -2637,7 +2752,7 @@ function renderChicas(){
         <td style="text-align:center;"><button onclick="deleteChicasMove(${ei})" style="background:none;border:none;color:#e55;font-size:16px;cursor:pointer;padding:0 4px;">×</button></td>
       </tr>`;
     });
-    html += `</tbody><tfoot><tr><td colspan="5" style="padding:8px;">
+    html += `</tbody><tfoot><tr><td colspan="6" style="padding:8px;">
       <button onclick="addChicasMove()" style="width:100%;padding:7px;background:var(--surface);border:1px dashed var(--rule);border-radius:7px;color:var(--mid);font-size:12px;cursor:pointer;">+ Add exercise</button>
     </td></tr></tfoot></table></div>`;
   } else {
@@ -2702,6 +2817,10 @@ function renderChicas(){
   }
 
   document.getElementById('chicas-content').innerHTML = html;
+  if(CHICAS_EDIT_MODE){
+    const tbody = document.querySelector('#chicas-edit-table tbody');
+    if(tbody) attachDragHandlers(tbody, 'chicas');
+  }
 }
 
 function chicasSetDay(i){
