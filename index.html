@@ -244,8 +244,8 @@ textarea { min-height: 80px; resize: vertical; }
       <div class="screen-header"><div class="screen-title">GENERATE <span>WEEK</span></div></div>
       <div class="card">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div class="form-group" style="margin:0"><label class="form-label">Generating week</label><input type="number" id="gen-week" value="6" min="1"></div>
-          <div class="form-group" style="margin:0"><label class="form-label">Based on week</label><input type="number" id="gen-from" value="5" min="1"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Generating week</label><input type="number" id="gen-week" value="10" min="1"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Based on week</label><input type="number" id="gen-from" value="9" min="1"></div>
         </div>
         <div class="form-group" style="margin-top:10px"><label class="form-label">Performance last week</label>
           <select id="gen-perf">
@@ -462,56 +462,54 @@ const CHECKPOINTS = {
     { label:'Upper A — Push', type:'upper',
       warmup:'2 min cardio · Barbell complex ramp-up @ 50% 2×3 · Arm circles · Band pull-apart 2×15 · Wall slide 2×10',
       moves:[
-        {n:'Barbell hang clean + push press complex',b:'—',f:'Barbell complex',fl:'140 lb',sets:4,reps:'5',sec:'Power primer',_repThresholds:[[155,5],[185,4],[190,3]]},
-        {n:'Barbell bench press',b:'220 lb',f:'Barbell bench press',fl:'170 lb',sets:4,reps:'8',_repThresholds:[[185,8],[225,7],[260,6],[295,5],[300,4]]},
-        {n:'Shoulder press',b:'115 lb',f:'DB shoulder press',fl:'60 lb each',sets:4,reps:'8',_repThresholds:[[70,8],[85,7],[90,6]]},
-        {n:'Cable chest fly (high-to-low)',b:'55 lb',f:'Cable chest fly (high-to-low)',fl:'15 lb/side',sets:3,reps:'19',_repCeiling:25},
-        {n:'Cable chest fly (mid pulley)',b:'55 lb',f:'Cable chest fly (mid pulley)',fl:'15 lb/side',sets:3,reps:'19',_repCeiling:25},
-        {n:'Cable chest fly (low-to-high)',b:'55 lb',f:'Cable chest fly (low-to-high)',fl:'15 lb/side',sets:3,reps:'19',_repCeiling:25},
-        {n:'Cable lateral raise',b:'25 lb',f:'Cable lateral raise (low pulley)',fl:'10 lb/side',sets:4,reps:'19',_repCeiling:22},
-        {n:'Cable pushdown (rope)',b:'105 lb',f:'Cable pushdown (rope)',fl:'100 lb',sets:3,reps:'15',_repCeiling:22},
-        {n:'Cable overhead tricep ext',b:'100 lb',f:'Cable overhead tricep ext',fl:'70 lb',sets:3,reps:'15',_repCeiling:22},
-        {n:'Cable woodchop',b:'70 lb',f:'Cable woodchop',fl:'50 lb',sets:3,reps:'12/side',sec:'Core',_repCeiling:16},
-        {n:'Sled push',b:'—',f:'3 × 20 yd moderate',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
+        {n:'Barbell bench press',b:'—',f:'Barbell bench press',fl:'185 lb',sets:4,reps:'5',_repThresholds:[[185,8],[225,7],[260,6],[295,5],[300,4]]},
+        {n:'Shoulder press',b:'—',f:'DB shoulder press',fl:'65 lb each',sets:4,reps:'5',_repThresholds:[[70,8],[85,7],[90,6]]},
+        {n:'Cable high-to-low chest fly',b:'—',f:'Cable chest fly (high-to-low)',fl:'35 lb',sets:3,reps:'15',_repCeiling:25},
+        {n:'Cable chest fly (mid pulley)',b:'—',f:'Cable chest fly (mid pulley)',fl:'30 lb',sets:3,reps:'15',_repCeiling:25},
+        {n:'Cable chest fly low-to-high',b:'—',f:'Cable chest fly (low-to-high)',fl:'20 lb',sets:3,reps:'15',_repCeiling:25},
+        {n:'Cable lateral raise',b:'—',f:'Cable lateral raise (low pulley)',fl:'20 lb',sets:4,reps:'12',_repCeiling:22},
+        {n:'Cable pushdown (rope)',b:'—',f:'Cable pushdown (rope)',fl:'100 lb',sets:3,reps:'9',_repCeiling:22},
+        {n:'Cable overhead tricep ext',b:'—',f:'Cable overhead tricep ext',fl:'85 lb',sets:3,reps:'12',_repCeiling:22},
+        {n:'Cable woodchop',b:'—',f:'Cable woodchop',fl:'50 lb',sets:3,reps:'8/side',sec:'Core',_repCeiling:16},
+        {n:'Cable crusher press',b:'—',f:'Cable crusher press',fl:'65 lb',sets:3,reps:'8'},
+        {n:'Medball slam',b:'—',f:'Medball slam',fl:'15 lb',sets:3,reps:'15'},
       ]},
     { label:'Lower A — Hinge', type:'lower',
       warmup:"2 min cardio · Hip circles 30s each · 90/90 hip switch 10 each · World's greatest stretch 5 each · Leg swings · Glute bridge 2×15 · Banded good morning 2×10 · BW RDL 2×8 · Bar ramp-up → 90% ×1",
       moves:[
-        {n:'Sled harness sprint',b:'—',f:'4 × 15 yd light',fl:'',sets:4,reps:'15 yd',sec:'Sled primer'},
-        {n:'Hex bar deadlift',b:'305 lb',f:'Hex bar deadlift',fl:'285 lb',sets:4,reps:'8',_odd:'Hex bar deadlift',_oddfl:'285 lb',_oddreps:'8',_even:'Landmine deadlift',_evenfl:'195 lb plates',_evenreps:'8',_track:'odd-load-even-load-dl',_repThresholds:[[295,8],[340,7],[385,6],[425,5],[430,4]]},
-        {n:'Barbell RDL',b:'195 lb',f:'Barbell RDL',fl:'185 lb',sets:4,reps:'8',_repThresholds:[[225,8],[265,7],[305,6],[345,5]]},
-        {n:'Barbell good morning',b:'—',f:'Barbell good morning',fl:'95 lb',sets:3,reps:'10',_repCeiling:12},
-        {n:'Cable leg curl',b:'70 lb',f:'Cable leg curl (ankle)',fl:'45 lb',sets:3,reps:'12',_repCeiling:20},
-        {n:'Hip thrusts / KB swing',b:'BW × 32',f:'KB swing',fl:'60 lb × 24',sets:4,reps:'see loads'},
-        {n:'Single leg cable extension',b:'—',f:'Single leg cable extension',fl:'45 lb/side',sets:3,reps:'15/leg',_repCeiling:20},
-        {n:'⟳ TRI-SET: Goblet reverse lunge',b:'BW × 9/leg',f:'Goblet reverse lunge',fl:'40 lb × 9/leg',sets:3,reps:'9/leg',sec:'Tri-set',_repCeiling:14},
-        {n:'⟳ Tibialis raise',b:'—',f:'Tibialis raise',fl:'25 lb',sets:3,reps:'17',_repCeiling:25},
-        {n:'⟳ Calf raise',b:'BW',f:'Standing calf raise',fl:'+45 lb plate',sets:3,reps:'22',_repCeiling:30},
+        {n:'Hex bar deadlift',b:'—',f:'Hex bar deadlift',fl:'305 lb',sets:4,reps:'8',_odd:'Hex bar deadlift',_oddfl:'305 lb',_oddreps:'8',_even:'Landmine deadlift',_evenfl:'210 lb plates',_evenreps:'8',_track:'odd-load-even-load-dl',_repThresholds:[[295,8],[340,7],[385,6],[425,5],[430,4]]},
+        {n:'Barbell RDL',b:'—',f:'Barbell RDL',fl:'200 lb',sets:4,reps:'6',_repThresholds:[[225,8],[265,7],[305,6],[345,5]]},
+        {n:'Barbell good morning',b:'—',f:'Barbell good morning',fl:'110 lb',sets:3,reps:'9',_repCeiling:12},
+        {n:'Cable Single leg curl',b:'—',f:'Cable single leg curl (ankle)',fl:'60 lb',sets:3,reps:'13',_repCeiling:20},
+        {n:'Hip thrusts / KB swing',b:'—',f:'KB swing',fl:'75 lb',sets:4,reps:'8'},
+        {n:'Single leg cable extension',b:'—',f:'Single leg cable extension',fl:'60 lb/side',sets:3,reps:'12/leg',_repCeiling:20},
+        {n:'⟳ Tibialis raise',b:'—',f:'Tibialis raise',fl:'40 lb',sets:3,reps:'11',sec:'Tri-set',_repCeiling:25},
+        {n:'⟳ Calf raise',b:'—',f:'Standing calf raise',fl:'+45 lb plate',sets:3,reps:'17',_repCeiling:30},
       ]},
     { label:'Upper B — Pull', type:'upper',
       warmup:'2 min cardio · Band pull-apart 2×15 · Face pull light band 2×15 · Scapular pull-up 2×8 · Prone Y-T-W 1×8 · Dead hang 2×20–30s',
       moves:[
-        {n:'Lat pulldown',b:'155 lb',f:'Cable lat pulldown (bar)',fl:'160 lb',sets:4,reps:'10',_repThresholds:[[180,10],[210,8],[215,6]]},
-        {n:'Banded row',b:'245 lb',f:'Cable seated row',fl:'160 lb',sets:4,reps:'10',_repThresholds:[[180,10],[210,8],[215,6]]},
-        {n:'Cable face pull',b:'55 lb',f:'Cable face pull (rope)',fl:'70 lb',sets:4,reps:'16',_repCeiling:25},
-        {n:'Cable crossover fly (high-to-low)',b:'20 lb',f:'Cable crossover fly (high-to-low)',fl:'20 lb/side',sets:3,reps:'16',_repCeiling:22},
-        {n:'Cable crossover fly (mid)',b:'15 lb',f:'Cable crossover fly (mid)',fl:'15 lb/side',sets:3,reps:'16',_repCeiling:22},
-        {n:'Cable crossover fly (low-to-high)',b:'20 lb',f:'Cable crossover fly (low-to-high)',fl:'20 lb/side',sets:3,reps:'16',_repCeiling:22},
-        {n:'Cable curl (bar)',b:'105 lb',f:'Cable curl (bar)',fl:'80 lb',sets:3,reps:'11',_repCeiling:18},
-        {n:'Cable single-arm curl',b:'95 lb',f:'Cable single-arm curl',fl:'15 lb',sets:3,reps:'22',_repCeiling:25},
-        {n:'Cable straight-arm pulldown',b:'95 lb',f:'Cable straight-arm pulldown',fl:'65 lb',sets:4,reps:'21',_repCeiling:25},
+        {n:'Lat pulldown',b:'—',f:'Cable lat pulldown (bar)',fl:'190 lb',sets:4,reps:'10',_repThresholds:[[180,10],[210,8],[215,6]]},
+        {n:'Cable row',b:'—',f:'Cable seated row',fl:'190 lb',sets:4,reps:'10',_repThresholds:[[180,10],[210,8],[215,6]]},
+        {n:'Cable crossover rear delt fly (high to low)',b:'—',f:'Cable rear delt fly (high-to-low)',fl:'30 lb each',sets:3,reps:'12',_repCeiling:22},
+        {n:'Band pull-apart',b:'—',f:'Band pull-apart',fl:'20 lb',sets:3,reps:'12',_repCeiling:20},
+        {n:'Cable crossover rear delt fly (low to high)',b:'—',f:'Cable rear delt fly (low-to-high)',fl:'15 lb',sets:3,reps:'12',_repCeiling:22},
+        {n:'Cable curl (bar)',b:'—',f:'Cable curl (bar)',fl:'95 lb',sets:3,reps:'8',_repCeiling:18},
+        {n:'Barbell curl',b:'—',f:'Barbell curl',fl:'55 lb',sets:3,reps:'12',_repCeiling:18},
+        {n:'Cable straight-arm pulldown',b:'—',f:'Cable straight-arm pulldown',fl:'80 lb',sets:4,reps:'14',_repCeiling:25},
       ]},
     { label:'Lower B — Quad', type:'lower',
       warmup:'2 min cardio · Leg swings · Walking lunge BW 2×10 · Goblet squat light KB 2×10 · Box step-up BW 2×8 each · Bar ramp-up back squat',
       moves:[
-        {n:'Landmine thruster',b:'—',f:'Landmine thruster',fl:'70 lb plates',sets:3,reps:'5',sec:'Power primer'},
-        {n:'Sled push + pull circuit',b:'—',f:'3 rounds 20 yd push → pull',fl:'',sets:3,reps:'20 yd',sec:'Sled'},
-        {n:'Back squat',b:'175 lb',f:'Barbell back squat',fl:'185 lb',sets:4,reps:'8',_repThresholds:[[205,8],[245,7],[285,6],[325,5],[330,4]]},
-        {n:'Landmine squat',b:'—',f:'Landmine squat',fl:'95 lb plates',sets:4,reps:'8'},
-        {n:'⟳ TRI-SET: Goblet reverse lunge',b:'BW × 9/leg',f:'Goblet reverse lunge',fl:'40 lb × 9/leg',sets:3,reps:'9/leg',sec:'Tri-set',_repCeiling:14},
-        {n:'⟳ Tibialis raise',b:'—',f:'Tibialis raise',fl:'25 lb',sets:3,reps:'16',_repCeiling:25},
-        {n:'⟳ Calf raise',b:'BW',f:'Standing calf raise',fl:'+45 lb plate',sets:3,reps:'21',_repCeiling:30},
-        {n:"KB farmer's carry",b:'—',f:'Farmer carry bars',fl:'53 lb each',sets:3,reps:'90s',sec:'Carry'},
+        {n:'Landmine thruster',b:'—',f:'Landmine thruster',fl:'100 lb plates',sets:3,reps:'5',sec:'Power primer'},
+        {n:'Power cleans',b:'—',f:'Power cleans',fl:'115 lb',sets:3,reps:'7'},
+        {n:'Back squat',b:'—',f:'Barbell back squat',fl:'215 lb',sets:4,reps:'8',_repThresholds:[[205,8],[245,7],[285,6],[325,5],[330,4]]},
+        {n:'Box jumps',b:'—',f:'Box jumps',fl:'N/A',sets:3,reps:'11'},
+        {n:'Landmine squat',b:'—',f:'Landmine squat',fl:'120 lb plates',sets:4,reps:'5'},
+        {n:'⟳ TRI-SET: Rucksack reverse lunge',b:'—',f:'Rucksack reverse lunge',fl:'35 lb × 12',sets:3,reps:'8/leg',sec:'Tri-set',_repCeiling:14},
+        {n:'⟳ Tibialis raise',b:'—',f:'Tibialis raise',fl:'32.5 lb',sets:3,reps:'12',_repCeiling:25},
+        {n:'⟳ Calf raise',b:'—',f:'Standing calf raise',fl:'45 lb',sets:3,reps:'17',_repCeiling:30},
+        {n:"KB farmer's carry",b:'—',f:'Farmer carry bars',fl:'60 lb each',sets:3,reps:'90s',sec:'Carry'},
       ]},
   ]
 };
@@ -894,7 +892,7 @@ var RECOVERY_PLAN = {
 };
 
 let ST = {
-  week:5, progDay:0, randDay:0,
+  week:9, progDay:0, randDay:0,
   program: JSON.parse(JSON.stringify(W17)),
   logs:[...SEED_LOGS],
   eq:[...DEFAULT_EQ],
@@ -1592,7 +1590,7 @@ function saveState(){
 function loadState(){
   try{
     // Version flag — only bump this when program STRUCTURE changes (not bug fixes)
-    const appVersion = 'v6-ceilings';
+    const appVersion = 'v9-wk9';
     const storedVersion = localStorage.getItem('wt_version');
     if(storedVersion !== appVersion){
       // Only wipe program/week — preserve logs, equipment, chicas, api key, tv
@@ -1614,7 +1612,7 @@ function loadState(){
 }
 
 // INIT
-const BUILD_STAMP = '2025-08-21';
+const BUILD_STAMP = '2025-08-22';
 loadState();
 var stampEl = document.getElementById('phase-label');
 if(stampEl) stampEl.textContent = 'BUILD ' + BUILD_STAMP;
