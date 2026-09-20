@@ -1251,8 +1251,10 @@ function generateLocalWeek(targetWeek, fromWeek, perf, notes, parsedSignals){
     const base = JSON.parse(JSON.stringify(ST.program || W17));
     base.forEach(day => {
       day.moves.forEach(m => {
+        // Snapshot normal sets before reducing
+        if(!m._normalSets) m._normalSets = parseInt(m.sets) || 3;
         // Drop to 2 sets, hold all loads, reduce reps ~30%
-        m.sets = Math.min(2, parseInt(m.sets)||2);
+        m.sets = 2;
         if(m.reps && m.reps !== 'see loads' && !/yd|s$/.test(m.reps)){
           const r = m.reps.match(/^(\d+)/);
           if(r) m.reps = Math.max(4, Math.floor(parseInt(r[1]) * 0.7)) + (m.reps.slice(r[0].length)||'');
@@ -1260,6 +1262,21 @@ function generateLocalWeek(targetWeek, fromWeek, perf, notes, parsedSignals){
       });
     });
     return { deload: true, program: base };
+  }
+
+  // WEEK AFTER DELOAD — restore normal sets before progressing
+  const isPostDeload = (weekNum - 1) % 4 === 0 && weekNum > 1;
+  if(isPostDeload){
+    const prog = ST.program || W17;
+    prog.forEach(day => {
+      day.moves.forEach(m => {
+        if(m._normalSets && parseInt(m.sets) < m._normalSets){
+          m.sets = m._normalSets;
+        }
+        // Clear snapshot after restoring
+        delete m._normalSets;
+      });
+    });
   }
 
   // Deep clone current program as the base
@@ -1597,7 +1614,7 @@ function loadState(){
 }
 
 // INIT
-const BUILD_STAMP = '2025-08-20';
+const BUILD_STAMP = '2025-08-21';
 loadState();
 var stampEl = document.getElementById('phase-label');
 if(stampEl) stampEl.textContent = 'BUILD ' + BUILD_STAMP;
