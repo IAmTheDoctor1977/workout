@@ -565,7 +565,6 @@ const POOL = {
   chest_acc:[
     {n:'Cable chest fly',b:'Banded chest fly',bl:'50 lb',f:'Cable chest fly (mid pulley)',fl:'15 lb/side'},
     {n:'DB incline fly',b:'Banded incline fly',bl:'40 lb',f:'DB incline fly',fl:'20 lb each'},
-    {n:'DB pullover',b:'Banded pullover',bl:'40 lb',f:'DB pullover',fl:'50 lb'},
     {n:'KB pullover',b:'Banded pullover',bl:'40 lb',f:'KB pullover',fl:'53 lb'},
     {n:'DB svend press',b:'Banded chest',bl:'30 lb',f:'DB svend press',fl:'25 lb each'},
     {n:'Band standing fly',b:'Band standing fly',bl:'40 lb',f:'Band standing fly',fl:'40 lb'},
@@ -659,7 +658,6 @@ const POOL = {
     {n:'DB zottman curl',b:'Banded curl',bl:'80 lb',f:'DB zottman curl',fl:'25 lb each'},
     {n:'Barbell reverse curl',b:'Banded reverse curl',bl:'70 lb',f:'Barbell reverse curl',fl:'35 lb'},
     {n:'DB drag curl',b:'Banded drag curl',bl:'80 lb',f:'DB drag curl',fl:'30 lb each'},
-    {n:'DB 21s',b:'Banded 21s',bl:'80 lb',f:'DB 21s',fl:'25 lb each'},
     {n:'DB preacher curl',b:'Banded preacher curl',bl:'80 lb',f:'DB preacher curl',fl:'25 lb each'},
   ],
   hinge_primary:[
@@ -1363,62 +1361,8 @@ function generateLocalWeek(targetWeek, fromWeek, perf, notes, parsedSignals){
     });
   });
 
-  // ACCESSORY AUTO-ROTATION — swap 1-2 non-primary accessory moves per day
-  // Primaries are never touched. Only accessories (tricep, bicep, rear_delt, shoulder_acc, chest_acc)
-  const ACCESSORY_CATS = {
-    tricep: POOL.tricep,
-    bicep: POOL.bicep,
-    rear_delt: POOL.rear_delt,
-    shoulder_acc: POOL.shoulder_acc,
-    chest_acc: POOL.chest_acc,
-  };
-
-  // Map movement names to their pool category for lookup
-  function guessCategory(moveName){
-    const n = moveName.toLowerCase();
-    if(/curl|bicep|zottman|hammer curl|preacher|spider curl|drag curl|21s/.test(n)) return 'bicep';
-    if(/pushdown|skull|overhead ext|kickback|dip|tate|diamond/.test(n)) return 'tricep';
-    if(/rear delt|face pull|batwing|prone y|halo|pull-apart/.test(n)) return 'rear_delt';
-    if(/lateral raise|front raise|upright row|cuban|ytw|bottoms-up/.test(n)) return 'shoulder_acc';
-    if(/fly|pullover|svend|cross-body fly/.test(n)) return 'chest_acc';
-    return null;
-  }
-
-  base.forEach(day => {
-    let swapsLeft = 2; // max 2 accessory swaps per day
-    // Track all movement names already in this day to prevent duplicates
-    const usedNames = new Set(day.moves.map(m => m.n.toLowerCase()));
-
-    day.moves.forEach(m => {
-      if(swapsLeft <= 0) return;
-      if(isNonProgressing(m.n)) return;
-      if(isPrimaryMove(m.n)) return;
-
-      const cat = guessCategory(m.n);
-      if(!cat) return;
-
-      const weekNum = parseInt(targetWeek);
-      const moveHash = m.n.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
-      if((weekNum + moveHash) % 3 !== 0) return;
-
-      const pool = ACCESSORY_CATS[cat] || [];
-      // Filter out current movement AND any already used in this day
-      const alt = pool.filter(p => p.n !== m.n && !usedNames.has(p.n.toLowerCase()));
-      if(!alt.length) return;
-
-      const pick = alt[Math.floor((weekNum * moveHash) % alt.length)];
-      // Remove old name from used set, add new one
-      usedNames.delete(m.n.toLowerCase());
-      usedNames.add(pick.n.toLowerCase());
-
-      m.n = pick.n;
-      m.f = pick.f;
-      m.fl = pick.fl;
-      m.b = pick.b;
-      m.bl = pick.bl;
-      swapsLeft--;
-    });
-  });
+  // ACCESSORY AUTO-ROTATION DISABLED — generator only progresses existing movements,
+  // never substitutes from pool. Use edit mode or Coach to change accessory selections.
 
   return base;
 }
@@ -1612,7 +1556,7 @@ function loadState(){
 }
 
 // INIT
-const BUILD_STAMP = '2025-08-22b';
+const BUILD_STAMP = '2026-10-10a'; // fix: disabled generator accessory auto-rotation
 loadState();
 var stampEl = document.getElementById('phase-label');
 if(stampEl) stampEl.textContent = 'BUILD ' + BUILD_STAMP;
